@@ -1,5 +1,5 @@
 Package: mt7663-router-webui
-Version: 1.0.1
+Version: 1.0.3
 Section: net
 Priority: optional
 Architecture: all

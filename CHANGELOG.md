@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.3] - 2026-11-01
+
+### Fixed
+- **Station Disconnect & OFFLINE Status Accuracy**:
+  - Fixed logic flaw where an empty active station set (`active_wifi_stas`) evaluated to `True` (`not active_wifi_stas`), causing disconnected DHCP lease entries to falsely display with `CONNECTED` green status.
+  - Wired real-time association check directly to kernel mac80211 station dump (`iw dev ap0 station dump`); stations absent from the dump are strictly assigned `OFFLINE` status with muted badge styling.
+- **Active Clients Counter Accuracy**:
+  - Fixed `client_count` in both Dashboard card and table header (`Perangkat Terhubung ( ... )`) to sum only stations actively associated with `status == "CONNECTED"`. Disconnected devices or stale lease entries no longer increment the active client counter.
+- **Device Deletion & DHCP Release Reliability**:
+  - Updated `/api/devices/delete` (🗑️ button) to remove MAC mappings from `mt7663-devices.json`, purge matching lease entries from `/var/lib/misc/dnsmasq.leases`, and flush kernel ARP cache (`ip neigh flush dev ap0`), removing the device instantly and permanently.
+  - Revamped `/api/dhcp/release` (`♻️ Release DHCP`) to truncate lease files, flush ARP, terminate running `dnsmasq`, and cleanly spawn a fresh instance so in-memory DHCP cache is completely wiped.
+- **Authentication Handshake Fix in Management Endpoints**:
+  - Replaced undefined `check_auth()` calls in `/api/devices/rename`, `/api/devices/delete`, and `/api/dhcp/release` with proper `is_authenticated()` session checks, resolving HTTP 500 Internal Server Errors when modifying devices or releasing DHCP.
+
+---
+
 ## [1.0.2] - 2026-11-01
 
 ### Added
