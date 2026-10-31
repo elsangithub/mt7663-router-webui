@@ -54,6 +54,21 @@ start_hotspot() {
     ip link set "$AP_IF" mtu "$AP_MTU"
     ip link set "$AP_IF" up
 
+    # Apply Low-Latency Gaming QoS (fq_codel bufferbloat mitigation)
+    if command -v tc >/dev/null 2>&1; then
+        tc qdisc replace dev "$AP_IF" root fq_codel target 5ms interval 100ms noecn 2>/dev/null || \
+        tc qdisc replace dev "$AP_IF" root fq_codel 2>/dev/null || true
+    fi
+
+    # Optimize CPU Governor latency responsiveness for gaming packets
+    for gov in /sys/devices/system/cpu/cpufreq/ondemand /sys/devices/system/cpu/cpu0/cpufreq/ondemand; do
+        if [ -d "$gov" ]; then
+            echo 25 > "${gov}/up_threshold" 2>/dev/null || true
+            echo 10 > "${gov}/sampling_down_factor" 2>/dev/null || true
+            echo 1 > "${gov}/io_is_busy" 2>/dev/null || true
+        fi
+    done
+
     sysctl -w net.ipv4.ip_forward=1 >/dev/null
     
     # Masquerade traffic going out via either Ethernet (eth0) or Wi-Fi Client (wlan0)

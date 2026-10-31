@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.2] - 2026-11-01
+
+### Added
+- **Low-Latency Online Gaming Optimizations**:
+  - **DTIM Period Tuning (`dtim_period=1`)**: Shortened beacon wake-up intervals from 200 ms to 100 ms in `hostapd-mt7663.conf`, eliminating micro-sleep buffering delays on mobile gaming clients.
+  - **U-APSD Advertisement Disabled (`uapsd_advertisement_enabled=0`)**: Prevented WMM sleep buffer queuing jitter on modern smartphone wireless chipsets.
+  - **Bufferbloat Mitigation (`fq_codel`)**: Automatically applied Fair Queueing Controlled Delay (`target 5ms interval 100ms noecn`) queue discipline on interface `ap0` during hotspot startup, prioritizing small UDP gaming packets over large TCP bulk transfers.
+  - **CPU Governor Responsiveness Tuning**: Tuned kernel `ondemand` governor parameters (`up_threshold=25`, `sampling_down_factor=10`, `io_is_busy=1`) when hotspot activates to maintain steady processing frequencies and eliminate clock switching micro-jitter.
+- **Client & Hostname Management**:
+  - **Delete Device Action (🗑️)**: Added an explicit delete button next to hostname editing in the connected devices table, enabling instant removal of duplicate/stale entries caused by mobile MAC Randomization.
+  - **API Endpoint (`/api/devices/delete`)**: Backend endpoint to cleanly remove cached MAC mappings from `/var/lib/misc/mt7663-devices.json`.
+  - **Flush DHCP Leases Button (`♻️ Release DHCP`)**: Added a quick action button and backend endpoint (`/api/dhcp/release`) to flush inactive DHCP leases from `dnsmasq.leases`, freeing orphaned IP addresses immediately.
+- **Admin Password Safety & Confirmation**:
+  - Added a mandatory **Confirm New Password** field with real-time match validation (`checkPassMatch`) and backend validation to prevent accidental lockouts caused by typos.
+  - Added automated session invalidation and re-login flow upon successful password modification.
+
+### Changed
+- **Client Status Accuracy**:
+  - Replaced stale DHCP lease status assumptions with real-time station dump verification (`iw dev ap0 station dump`). Devices that disconnected or roamed to another Wi-Fi network are now marked as `OFFLINE` (with muted styling) instead of remaining misleadingly `ACTIVE`.
+- **Table Column Headers**:
+  - Simplified traffic table headers by removing redundant directional indicators: `Upload (UP)` -> `Upload` (`Unggah`), `Download (DOWN)` -> `Download` (`Unduh`).
+- **Form Text & Localization**:
+  - Removed confusing `Default: admin` placeholder in current password input; replaced with localized contextual prompts (`Enter current password` / `Ketik kata sandi saat ini`).
+  - Standardized all admin form placeholders to fully respect active language selection.
+
 ## [1.0.1] - 2026-10-31
 
 ### Added

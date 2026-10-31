@@ -14,6 +14,7 @@ import secrets
 import subprocess
 import platform
 import time
+import signal
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -356,6 +357,17 @@ def get_connected_clients():
     traffic_data = get_iptables_traffic()
     device_cache = load_device_cache()
     cache_dirty = False
+
+    # Check real-time associated Wi-Fi stations on ap0
+    code_sta, stdout_sta, _ = run_cmd(["iw", "dev", "ap0", "station", "dump"])
+    active_wifi_stas = set()
+    if code_sta == 0 and stdout_sta:
+        for line in stdout_sta.splitlines():
+            line = line.strip()
+            if line.startswith("Station "):
+                parts = line.split()
+                if len(parts) >= 2:
+                    active_wifi_stas.add(parts[1].lower())
     
     # 1. Read dnsmasq leases
     if os.path.exists(DNSMASQ_LEASES):
@@ -379,11 +391,12 @@ def get_connected_clients():
                             seen_macs.add(mac)
                             ensure_client_accounting(ip)
                             c_traf = traffic_data.get(ip, {"up_bytes": 0, "down_bytes": 0})
+                            initial_status = "CONNECTED" if (not active_wifi_stas or mac in active_wifi_stas) else "OFFLINE"
                             clients.append({
                                 "ip": ip,
                                 "mac": mac,
                                 "name": name,
-                                "status": "ACTIVE",
+                                "status": initial_status,
                                 "up_bytes": c_traf["up_bytes"],
                                 "down_bytes": c_traf["down_bytes"],
                                 "up_str": format_bytes(c_traf["up_bytes"]),
@@ -407,13 +420,21 @@ def get_connected_clients():
         # Update existing clients state
         for c in clients:
             if c["mac"] in neigh_states:
-                c["status"] = neigh_states[c["mac"]][1]
+                arp_state = neigh_states[c["mac"]][1]
+                if active_wifi_stas and c["mac"] not in active_wifi_stas:
+                    c["status"] = "OFFLINE"
+                else:
+                    c["status"] = arp_state
                 if c["name"] == "Unknown" and c["mac"] in device_cache:
                     c["name"] = device_cache[c["mac"]]
+            elif active_wifi_stas and c["mac"] not in active_wifi_stas:
+                c["status"] = "OFFLINE"
 
         # Add any ARP entries not found in leases
         for mac, (ip, state) in neigh_states.items():
             if mac not in seen_macs and state in ["REACHABLE", "DELAY", "PROBE", "STALE"]:
+                if active_wifi_stas and mac not in active_wifi_stas:
+                    continue  # Ignore stale ARP for disconnected devices
                 seen_macs.add(mac)
                 ensure_client_accounting(ip)
                 c_traf = traffic_data.get(ip, {"up_bytes": 0, "down_bytes": 0})
@@ -564,6 +585,11 @@ def api_auth_change_password():
     current_pass = str(data.get("current_password", "")).strip()
     new_user = str(data.get("new_username", "")).strip()
     new_pass = str(data.get("new_password", "")).strip()
+
+    confirm_pass = str(data.get("confirm_password", "")).strip()
+    if confirm_pass and new_pass != confirm_pass:
+        response.status = 400
+        return {"status": "error", "message": "New password and confirmation do not match (Konfirmasi kata sandi baru tidak cocok)."}
 
     stored_user, stored_pass = get_auth_credentials()
     if current_pass != stored_pass:
@@ -826,6 +852,8 @@ ssid={ssid}
 hw_mode={hw_mode}
 channel={channel}
 wmm_enabled=1
+uapsd_advertisement_enabled=0
+dtim_period=1
 ieee80211n=1
 {ieee80211ac_line}{ht_line}{vht_lines}{sec_block}
 """
@@ -1076,6 +1104,45 @@ def api_rename_device():
     except Exception as e:
         response.status = 500
         return {"status": "error", "message": str(e)}
+
+@app.post('/api/devices/delete')
+def api_delete_device():
+    check_auth()
+    try:
+        data = request.json or {}
+        mac = str(data.get("mac", "")).lower().strip()
+        if not mac:
+            response.status = 400
+            return {"status": "error", "message": "MAC is required"}
+        
+        cache = load_device_cache()
+        if mac in cache:
+            del cache[mac]
+            save_device_cache(cache)
+        return {"status": "ok", "message": f"Device {mac} removed from history."}
+    except Exception as e:
+        response.status = 500
+        return {"status": "error", "message": str(e)}
+
+@app.post('/api/dhcp/release')
+def api_dhcp_release():
+    check_auth()
+    try:
+        if os.path.exists(DNSMASQ_LEASES):
+            with open(DNSMASQ_LEASES, "w") as f:
+                f.truncate(0)
+        
+        if os.path.exists(DNSMASQ_PID):
+            try:
+                with open(DNSMASQ_PID, "r") as f:
+                    pid = int(f.read().strip())
+                os.kill(pid, signal.SIGHUP)
+            except Exception:
+                pass
+        return {"status": "ok", "message": "DHCP leases flushed successfully (Sewa DHCP berhasil dirilis)."}
+    except Exception as e:
+        response.status = 500
+        return {"status": "error", "message": f"Failed releasing DHCP leases: {e}"}
 
 # ----------------- Static Frontend -----------------
 

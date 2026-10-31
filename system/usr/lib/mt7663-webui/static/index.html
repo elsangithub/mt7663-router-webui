@@ -53,6 +53,7 @@
     .badge-success { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
     .badge-danger { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
     .badge-info { background: rgba(56, 189, 248, 0.2); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.4); }
+    .badge-muted { background: rgba(148, 163, 184, 0.2); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.4); }
 
     .stat-row { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.55rem; }
     .stat-label { color: var(--text-muted); }
@@ -225,7 +226,10 @@
       <div class="card">
         <div class="card-header">
           <span class="card-title">👥 <span id="t-table-clients-title">Connected Devices</span> (<span id="client-count">0</span>)</span>
-          <button class="btn btn-secondary btn-sm" onclick="fetchStatus()">🔄 <span id="t-btn-refresh">Refresh</span></button>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-secondary btn-sm" onclick="flushDhcpLeases()" title="Flush DHCP Leases">♻️ <span id="t-btn-dhcp-release">Release DHCP</span></button>
+            <button class="btn btn-secondary btn-sm" onclick="fetchStatus()">🔄 <span id="t-btn-refresh">Refresh</span></button>
+          </div>
         </div>
         <div style="overflow-x: auto;">
           <table>
@@ -234,8 +238,8 @@
                 <th id="th-hostname">Device Name / Hostname</th>
                 <th id="th-ip">IP Address</th>
                 <th id="th-mac">MAC Address</th>
-                <th id="th-upload">Upload (UP)</th>
-                <th id="th-download">Download (DOWN)</th>
+                <th id="th-upload">Upload</th>
+                <th id="th-download">Download</th>
                 <th id="th-status">Status</th>
               </tr>
             </thead>
@@ -420,7 +424,7 @@
           <div class="form-group">
             <label id="lbl-admin-curr-pass">Current Password</label>
             <div class="input-with-eye">
-              <input type="password" id="adm-curr-pass" required placeholder="Default: admin">
+              <input type="password" id="adm-curr-pass" required placeholder="Enter current password">
               <button type="button" class="eye-btn" onclick="togglePass('adm-curr-pass', this)">👁️</button>
             </div>
           </div>
@@ -431,9 +435,17 @@
           <div class="form-group">
             <label id="lbl-admin-new-pass">New Password</label>
             <div class="input-with-eye">
-              <input type="password" id="adm-new-pass" required minlength="4" placeholder="Enter new password">
+              <input type="password" id="adm-new-pass" required minlength="4" placeholder="Enter new password" oninput="checkPassMatch()">
               <button type="button" class="eye-btn" onclick="togglePass('adm-new-pass', this)">👁️</button>
             </div>
+          </div>
+          <div class="form-group">
+            <label id="lbl-admin-confirm-pass">Confirm New Password</label>
+            <div class="input-with-eye">
+              <input type="password" id="adm-confirm-pass" required minlength="4" placeholder="Confirm new password" oninput="checkPassMatch()">
+              <button type="button" class="eye-btn" onclick="togglePass('adm-confirm-pass', this)">👁️</button>
+            </div>
+            <div id="pass-match-msg" style="font-size: 0.75rem; margin-top: 0.35rem; display: none;"></div>
           </div>
           <div style="margin-top: 1.5rem;">
             <button type="submit" class="btn btn-primary" style="width: 100%;" id="btn-admin-save">💾 Update Admin Password</button>
@@ -508,11 +520,12 @@
         lblRamPct: 'RAM %:',
         tableClientsTitle: 'Connected Devices',
         btnRefresh: 'Refresh',
+        btnDhcpRelease: 'Release DHCP',
         thHostname: 'Device Name / Hostname',
         thIp: 'IP Address',
         thMac: 'MAC Address',
-        thUpload: 'Upload (UP)',
-        thDownload: 'Download (DOWN)',
+        thUpload: 'Upload',
+        thDownload: 'Download',
         thStatus: 'Status',
         tdNoClients: 'No devices connected.',
         hsSettingsTitle: '5 GHz Hotspot Configuration',
@@ -547,6 +560,10 @@
         lblAdminCurrPass: 'Current Password',
         lblAdminNewUser: 'Administrator Username',
         lblAdminNewPass: 'New Password',
+        lblAdminConfirmPass: 'Confirm New Password',
+        phCurrentPass: 'Enter current password',
+        phNewPass: 'Enter new password',
+        phConfirmPass: 'Confirm new password',
         btnAdminSave: '💾 Update Admin Password',
         modalConnectTitle: 'Connect to Wi-Fi',
         lblModalPass: 'Wi-Fi Password',
@@ -606,11 +623,12 @@
         lblRamPct: 'Persentase RAM:',
         tableClientsTitle: 'Perangkat Terhubung',
         btnRefresh: 'Segarkan',
+        btnDhcpRelease: 'Rilis DHCP',
         thHostname: 'Nama Perangkat / Hostname',
         thIp: 'Alamat IP',
         thMac: 'MAC Address',
-        thUpload: 'Unggah (UP)',
-        thDownload: 'Unduh (DOWN)',
+        thUpload: 'Unggah',
+        thDownload: 'Unduh',
         thStatus: 'Status',
         tdNoClients: 'Tidak ada perangkat terhubung.',
         hsSettingsTitle: 'Konfigurasi Hotspot 5 GHz',
@@ -645,6 +663,10 @@
         lblAdminCurrPass: 'Kata Sandi Saat Ini',
         lblAdminNewUser: 'Username Administrator',
         lblAdminNewPass: 'Kata Sandi Baru',
+        lblAdminConfirmPass: 'Konfirmasi Kata Sandi Baru',
+        phCurrentPass: 'Ketik kata sandi saat ini',
+        phNewPass: 'Ketik kata sandi baru',
+        phConfirmPass: 'Ulangi kata sandi baru',
         btnAdminSave: '💾 Perbarui Password Admin',
         modalConnectTitle: 'Sambungkan ke Wi-Fi',
         lblModalPass: 'Kata Sandi Wi-Fi',
@@ -756,6 +778,21 @@
       document.getElementById('lbl-admin-curr-pass').innerText = t.lblAdminCurrPass;
       document.getElementById('lbl-admin-new-user').innerText = t.lblAdminNewUser;
       document.getElementById('lbl-admin-new-pass').innerText = t.lblAdminNewPass;
+      if (document.getElementById('lbl-admin-confirm-pass')) {
+        document.getElementById('lbl-admin-confirm-pass').innerText = t.lblAdminConfirmPass;
+      }
+      if (document.getElementById('adm-curr-pass')) {
+        document.getElementById('adm-curr-pass').placeholder = t.phCurrentPass;
+      }
+      if (document.getElementById('adm-new-pass')) {
+        document.getElementById('adm-new-pass').placeholder = t.phNewPass;
+      }
+      if (document.getElementById('adm-confirm-pass')) {
+        document.getElementById('adm-confirm-pass').placeholder = t.phConfirmPass;
+      }
+      if (document.getElementById('t-btn-dhcp-release')) {
+        document.getElementById('t-btn-dhcp-release').innerText = t.btnDhcpRelease;
+      }
       document.getElementById('btn-admin-save').innerText = t.btnAdminSave;
 
       document.getElementById('t-modal-connect-title').innerText = t.modalConnectTitle;
@@ -998,13 +1035,14 @@
                 <div style="display: flex; align-items: center; gap: 0.4rem;">
                   <strong>${c.name}</strong>
                   <button onclick="renameDevice('${c.mac}', '${c.name.replace(/'/g, "\'")}')" title="${currentLang === 'en' ? 'Rename device' : 'Ubah nama perangkat'}" style="background: none; border: none; cursor: pointer; font-size: 0.85rem; opacity: 0.75; padding: 1px 4px; border-radius: 4px;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.75">✏️</button>
+                  <button onclick="deleteDevice('${c.mac}')" title="${currentLang === 'en' ? 'Delete from history' : 'Hapus dari riwayat'}" style="background: none; border: none; cursor: pointer; font-size: 0.85rem; opacity: 0.75; padding: 1px 4px; border-radius: 4px; color: #ef4444;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.75">🗑️</button>
                 </div>
               </td>
               <td><code>${c.ip}</code></td>
               <td><code>${c.mac}</code></td>
               <td style="color: #38bdf8; font-weight: 600;">↑ ${c.up_str || '0 B'}</td>
               <td style="color: #34d399; font-weight: 600;">↓ ${c.down_str || '0 B'}</td>
-              <td><span class="badge ${c.status === 'FAILED' ? 'badge-danger' : 'badge-success'}">${c.status}</span></td>
+              <td><span class="badge ${c.status === 'FAILED' ? 'badge-danger' : (c.status === 'OFFLINE' ? 'badge-muted' : 'badge-success')}">${c.status}</span></td>
             </tr>
           `).join('');
         } else {
