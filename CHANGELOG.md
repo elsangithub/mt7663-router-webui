@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.3] - 2026-11-01
 
+### Added
+- **One-Click STB System Reboot (`/api/system/reboot`)**:
+  - Added a dedicated reboot trigger button in the STB Status card with an interactive confirmation prompt.
+  - Built an animated 45-second countdown progress bar overlay with automated reconnect and page reload once the STB finishes rebooting.
+- **Configurable DHCP Lease Duration**:
+  - Added a customizable DHCP Lease Time selector in the 5 GHz Hotspot settings (1h, 2h, 6h, 12h, 24h, 48h, 7d), replacing hardcoded configuration values.
+- **Sequential IP Allocation Option (`--dhcp-sequential-ip`)**:
+  - Added configurable IP distribution method in Web UI: choose between **Sequential** (allocating IPs in order immediately following the gateway) or **Random / Hash-based** (MAC hash-based).
+- **Real-Time Lease Time Remaining Column**:
+  - Added a dedicated **Lease Time** (`Sisa Sewa`) column in the connected clients table displaying dynamic remaining lease countdown for each leased IP.
+- **Table Layout & Header Streamlining**:
+  - Condensed `Device Name / Hostname` table header to simply `Hostname` for cleaner spacing and perfect responsiveness across mobile and desktop viewports.
+
 ### Fixed
 - **Station Disconnect & OFFLINE Status Accuracy**:
   - Fixed logic flaw where an empty active station set (`active_wifi_stas`) evaluated to `True` (`not active_wifi_stas`), causing disconnected DHCP lease entries to falsely display with `CONNECTED` green status.

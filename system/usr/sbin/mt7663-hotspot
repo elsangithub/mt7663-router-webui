@@ -20,6 +20,7 @@ AP_CIDR="${AP_CIDR:-24}"
 DHCP_START="${DHCP_START:-10}"
 DHCP_END="${DHCP_END:-100}"
 DHCP_LEASE="${DHCP_LEASE:-12h}"
+DHCP_ALLOCATION="${DHCP_ALLOCATION:-sequential}"
 DNS_SERVERS="${DNS_SERVERS:-1.1.1.1,8.8.8.8}"
 AP_MTU="${AP_MTU:-1408}"
 
@@ -110,7 +111,12 @@ start_hotspot() {
         kill "$(cat "$DNSMASQ_PID")" 2>/dev/null || true
     fi
     # Format DHCP DNS option (e.g. --dhcp-option=6,1.1.1.1,8.8.8.8)
+    DHCP_SEQ_ARG=""
+    if [ "${DHCP_ALLOCATION:-sequential}" = "sequential" ]; then
+        DHCP_SEQ_ARG="--dhcp-sequential-ip"
+    fi
     dnsmasq -C /dev/null -p 0 -i "$AP_IF" --bind-interfaces \
+        $DHCP_SEQ_ARG \
         --dhcp-range="${DHCP_RANGE}" \
         --dhcp-option=3,"${AP_GATEWAY}" \
         --dhcp-option=6,${DNS_SERVERS} \

@@ -31,6 +31,19 @@ from socketserver import ThreadingMixIn
 
 app = Bottle()
 
+@app.post('/api/system/reboot')
+def api_system_reboot():
+    if not is_authenticated():
+        response.status = 401
+        return {"status": "error", "message": "Unauthorized. Please log in first."}
+    try:
+        subprocess.Popen(["sh", "-c", "sleep 1 && systemctl reboot || reboot"])
+        return {"status": "ok", "message": "STB is rebooting... (STB sedang mulai ulang)"}
+    except Exception as e:
+        response.status = 500
+        return {"status": "error", "message": f"Failed to reboot: {e}"}
+
+
 HOSTAPD_CONF = "/etc/hostapd/hostapd-mt7663.conf"
 DEFAULT_CONF = "/etc/default/mt7663-hotspot"
 HOSTAPD_PID = "/run/mt7663-hostapd.pid"
@@ -256,6 +269,7 @@ def read_default_config():
         "dhcp_start": 10,
         "dhcp_end": 100,
         "dhcp_lease": "12h",
+        "dhcp_alloc": "sequential",
         "dns_servers": "1.1.1.1,8.8.8.8",
         "mtu": 1408,
         "width": 80,
@@ -281,6 +295,7 @@ def read_default_config():
                         try: config["dhcp_end"] = int(v)
                         except ValueError: pass
                     elif k == "DHCP_LEASE": config["dhcp_lease"] = v
+                    elif k == "DHCP_ALLOCATION": config["dhcp_alloc"] = v.lower()
                     elif k == "DNS_SERVERS": config["dns_servers"] = v
                     elif k == "AP_MTU":
                         try: config["mtu"] = int(v)
@@ -393,11 +408,37 @@ def get_connected_clients():
                             ensure_client_accounting(ip)
                             c_traf = traffic_data.get(ip, {"up_bytes": 0, "down_bytes": 0})
                             initial_status = ("CONNECTED" if (mac in active_wifi_stas) else "OFFLINE") if wifi_station_check_ok else "OFFLINE"
+                            
+                            # Calculate remaining lease time from epoch timestamp
+                            try:
+                                lease_exp = int(parts[0])
+                                rem_sec = max(0, lease_exp - int(time.time()))
+                                if rem_sec <= 0:
+                                    lease_str = "Expired"
+                                else:
+                                    hours = rem_sec // 3600
+                                    mins = (rem_sec % 3600) // 60
+                                    if hours >= 24:
+                                        days = hours // 24
+                                        rem_h = hours % 24
+                                        lease_str = f"{days}d {rem_h}h"
+                                    elif hours > 0:
+                                        lease_str = f"{hours}h {mins}m"
+                                    else:
+                                        lease_str = f"{mins}m"
+                            except Exception:
+                                lease_exp = 0
+                                rem_sec = 0
+                                lease_str = "-"
+
                             clients.append({
                                 "ip": ip,
                                 "mac": mac,
                                 "name": name,
                                 "status": initial_status,
+                                "lease_exp": lease_exp,
+                                "lease_sec": rem_sec,
+                                "lease_str": lease_str,
                                 "up_bytes": c_traf["up_bytes"],
                                 "down_bytes": c_traf["down_bytes"],
                                 "up_str": format_bytes(c_traf["up_bytes"]),
@@ -445,6 +486,9 @@ def get_connected_clients():
                     "mac": mac,
                     "name": name,
                     "status": "CONNECTED" if is_conn else "OFFLINE",
+                    "lease_exp": 0,
+                    "lease_sec": 0,
+                    "lease_str": "-",
                     "up_bytes": c_traf["up_bytes"],
                     "down_bytes": c_traf["down_bytes"],
                     "up_str": format_bytes(c_traf["up_bytes"]),
@@ -695,6 +739,8 @@ def api_status():
             "netmask": net_cfg["netmask"],
             "dhcp_start": net_cfg["dhcp_start"],
             "dhcp_end": net_cfg["dhcp_end"],
+            "dhcp_lease": net_cfg.get("dhcp_lease", "12h"),
+            "dhcp_alloc": net_cfg.get("dhcp_alloc", "sequential"),
             "dns_servers": net_cfg["dns_servers"],
             "clients": clients,
             "client_count": sum(1 for c in clients if c.get("status") == "CONNECTED")
@@ -724,6 +770,8 @@ def api_get_hotspot_config():
         "cidr": d_cfg["cidr"],
         "dhcp_start": d_cfg["dhcp_start"],
         "dhcp_end": d_cfg["dhcp_end"],
+        "dhcp_lease": d_cfg.get("dhcp_lease", "12h"),
+        "dhcp_alloc": d_cfg.get("dhcp_alloc", "sequential"),
         "dns_servers": d_cfg["dns_servers"],
         "mtu": d_cfg["mtu"],
         "wlan_connected": wifi_client.get("connected", False),
@@ -761,6 +809,12 @@ def api_save_hotspot_config():
         dhcp_end = int(data.get("dhcp_end", 100))
     except ValueError:
         dhcp_start, dhcp_end = 10, 100
+    dhcp_lease = str(data.get("dhcp_lease", "12h")).strip()
+    if not dhcp_lease:
+        dhcp_lease = "12h"
+    dhcp_alloc = str(data.get("dhcp_alloc", "sequential")).strip().lower()
+    if dhcp_alloc not in ["sequential", "random"]:
+        dhcp_alloc = "sequential"
     dns_servers = str(data.get("dns_servers", "1.1.1.1,8.8.8.8")).strip()
 
     # Validation
@@ -881,7 +935,8 @@ AP_NETMASK="255.255.255.0"
 AP_CIDR="24"
 DHCP_START="{dhcp_start}"
 DHCP_END="{dhcp_end}"
-DHCP_LEASE="12h"
+DHCP_LEASE="{dhcp_lease}"
+DHCP_ALLOCATION="{dhcp_alloc}"
 DNS_SERVERS="{dns_servers}"
 AP_MTU="1408"
 AP_WIDTH="{width}"
@@ -1187,18 +1242,23 @@ def api_dhcp_release():
         time.sleep(0.3)
 
         # Start fresh dnsmasq
+        dhcp_alloc = d_cfg.get("dhcp_alloc", "sequential")
         dns_cmd = [
             "dnsmasq",
             "-C", "/dev/null",
             "-p", "0",
             "-i", "ap0",
-            "--bind-interfaces",
+            "--bind-interfaces"
+        ]
+        if dhcp_alloc == "sequential":
+            dns_cmd.append("--dhcp-sequential-ip")
+        dns_cmd.extend([
             f"--dhcp-range={dhcp_range}",
             f"--dhcp-option=3,{gw}",
             f"--dhcp-option=6,{dns_servers}",
             f"--dhcp-option=26,{ap_mtu}",
             f"--pid-file={DNSMASQ_PID}"
-        ]
+        ])
         subprocess.Popen(dns_cmd)
 
         return {"status": "ok", "message": "DHCP leases flushed and service refreshed successfully (Sewa DHCP berhasil dirilis)."}

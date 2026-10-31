@@ -211,7 +211,10 @@
         <div class="card">
           <div class="card-header">
             <span class="card-title">⚡ <span id="t-card-stb-title">STB Status</span></span>
-            <span id="st-hostname" class="badge badge-info">HG680-FJ</span>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span id="st-hostname" class="badge badge-info">HG680-FJ</span>
+              <button onclick="confirmReboot()" class="btn btn-secondary btn-sm" style="padding: 0.2rem 0.6rem; font-size: 0.75rem; border-radius: 6px; background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.35); cursor: pointer;" title="Mulai ulang STB">🔄 <span id="btn-reboot-txt">Reboot</span></button>
+            </div>
           </div>
           <div class="stat-row"><span class="stat-label">Kernel:</span><span id="st-kernel" class="stat-val">-</span></div>
           <div class="stat-row"><span class="stat-label" id="t-lbl-temp">SOC Temp:</span><span id="st-temp" class="stat-val">-</span></div>
@@ -235,16 +238,17 @@
           <table>
             <thead>
               <tr>
-                <th id="th-hostname">Device Name / Hostname</th>
+                <th id="th-hostname">Hostname</th>
                 <th id="th-ip">IP Address</th>
                 <th id="th-mac">MAC Address</th>
+                <th id="th-lease">Lease Time</th>
                 <th id="th-upload">Upload</th>
                 <th id="th-download">Download</th>
                 <th id="th-status">Status</th>
               </tr>
             </thead>
             <tbody id="clients-tbody">
-              <tr><td colspan="6" style="text-align: center; color: var(--text-muted);" id="td-no-clients">No devices connected.</td></tr>
+              <tr><td colspan="7" style="text-align: center; color: var(--text-muted);" id="td-no-clients">No devices connected.</td></tr>
             </tbody>
           </table>
         </div>
@@ -350,6 +354,30 @@
                 <input type="number" id="hs-dhcp-end" min="3" max="254" value="100">
               </div>
               <div class="hint" id="hint-hs-dhcp">Clients will be assigned IPs in this range.</div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label id="lbl-hs-lease">DHCP Lease Time</label>
+              <select id="hs-lease">
+                <option value="1h">1 Hour (1h)</option>
+                <option value="2h">2 Hours (2h)</option>
+                <option value="6h">6 Hours (6h)</option>
+                <option value="12h">12 Hours (12h - Default)</option>
+                <option value="24h">24 Hours / 1 Day (24h)</option>
+                <option value="48h">48 Hours / 2 Days (48h)</option>
+                <option value="7d">7 Days (7d)</option>
+              </select>
+              <div class="hint" id="hint-hs-lease">How long a client holds an IP before renewal.</div>
+            </div>
+            <div class="form-group">
+              <label id="lbl-hs-alloc">DHCP IP Allocation</label>
+              <select id="hs-alloc">
+                <option value="sequential" id="opt-alloc-seq">Sequential (Starting after Gateway) [Recommended]</option>
+                <option value="random" id="opt-alloc-rand">Random / Hash-based (Random)</option>
+              </select>
+              <div class="hint" id="hint-hs-alloc">Assign IP sequentially from DHCP start range or via MAC hash.</div>
             </div>
           </div>
 
@@ -521,14 +549,22 @@
         tableClientsTitle: 'Connected Devices',
         btnRefresh: 'Refresh',
         btnDhcpRelease: 'Release DHCP',
-        thHostname: 'Device Name / Hostname',
+        thHostname: 'Hostname',
         thIp: 'IP Address',
         thMac: 'MAC Address',
+        thLease: 'Lease Time',
         thUpload: 'Upload',
         thDownload: 'Download',
         thStatus: 'Status',
         tdNoClients: 'No devices connected.',
         hsSettingsTitle: '5 GHz Hotspot Configuration',
+        lblHsLease: 'DHCP Lease Time',
+        hintHsLease: 'How long a client holds an IP before renewal.',
+        lblHsAlloc: 'DHCP IP Allocation',
+        hintHsAlloc: 'Assign IP sequentially starting from DHCP start range or via MAC hash.',
+        optAllocSeq: 'Sequential (Starting after Gateway) [Recommended]',
+        optAllocRand: 'Random / Hash-based (Random)',
+        btnRebootTxt: 'Reboot',
         btnStop: 'Stop',
         btnRestart: 'Restart',
         lblHsSsid: 'Wi-Fi Name (SSID)',
@@ -624,14 +660,22 @@
         tableClientsTitle: 'Perangkat Terhubung',
         btnRefresh: 'Segarkan',
         btnDhcpRelease: 'Rilis DHCP',
-        thHostname: 'Nama Perangkat / Hostname',
+        thHostname: 'Hostname',
         thIp: 'Alamat IP',
         thMac: 'MAC Address',
+        thLease: 'Sisa Sewa',
         thUpload: 'Unggah',
         thDownload: 'Unduh',
         thStatus: 'Status',
         tdNoClients: 'Tidak ada perangkat terhubung.',
         hsSettingsTitle: 'Konfigurasi Hotspot 5 GHz',
+        lblHsLease: 'Masa Sewa DHCP (Lease Time)',
+        hintHsLease: 'Lama waktu perangkat memegang IP sebelum diperbarui.',
+        lblHsAlloc: 'Metode Alokasi IP DHCP',
+        hintHsAlloc: 'Alokasi IP berurutan mulai dari awal DHCP range setelah IP Gateway.',
+        optAllocSeq: 'Berurutan setelah Gateway (Sequential) [Rekomendasi]',
+        optAllocRand: 'Acak / Berdasarkan Hash MAC (Random)',
+        btnRebootTxt: 'Mulai Ulang',
         btnStop: 'Matikan',
         btnRestart: 'Restart',
         lblHsSsid: 'Nama Wi-Fi (SSID)',
@@ -743,10 +787,27 @@
       document.getElementById('th-hostname').innerText = t.thHostname;
       document.getElementById('th-ip').innerText = t.thIp;
       document.getElementById('th-mac').innerText = t.thMac;
+      const thLeaseEl = document.getElementById('th-lease');
+      if (thLeaseEl) thLeaseEl.innerText = t.thLease;
       document.getElementById('th-upload').innerText = t.thUpload;
       document.getElementById('th-download').innerText = t.thDownload;
       document.getElementById('th-status').innerText = t.thStatus;
       document.getElementById('td-no-clients').innerText = t.tdNoClients;
+
+      const btnRebootEl = document.getElementById('btn-reboot-txt');
+      if (btnRebootEl) btnRebootEl.innerText = t.btnRebootTxt || 'Reboot';
+      const lblHsLeaseEl = document.getElementById('lbl-hs-lease');
+      if (lblHsLeaseEl) lblHsLeaseEl.innerText = t.lblHsLease;
+      const hintHsLeaseEl = document.getElementById('hint-hs-lease');
+      if (hintHsLeaseEl) hintHsLeaseEl.innerText = t.hintHsLease;
+      const lblHsAllocEl = document.getElementById('lbl-hs-alloc');
+      if (lblHsAllocEl) lblHsAllocEl.innerText = t.lblHsAlloc;
+      const hintHsAllocEl = document.getElementById('hint-hs-alloc');
+      if (hintHsAllocEl) hintHsAllocEl.innerText = t.hintHsAlloc;
+      const optAllocSeqEl = document.getElementById('opt-alloc-seq');
+      if (optAllocSeqEl) optAllocSeqEl.innerText = t.optAllocSeq;
+      const optAllocRandEl = document.getElementById('opt-alloc-rand');
+      if (optAllocRandEl) optAllocRandEl.innerText = t.optAllocRand;
 
       document.getElementById('t-hs-settings-title').innerText = t.hsSettingsTitle;
       document.getElementById('btn-hs-stop').innerText = t.btnStop;
@@ -1026,7 +1087,7 @@
         document.getElementById('st-hotspot-clients').innerText = data.hotspot.client_count + (currentLang === 'en' ? ' Clients' : ' Klien');
         document.getElementById('client-count').innerText = data.hotspot.client_count;
 
-        // Clients Table with UP / DOWN traffic
+        // Clients Table with UP / DOWN traffic and Lease Time
         const tbody = document.getElementById('clients-tbody');
         if (data.hotspot.clients && data.hotspot.clients.length > 0) {
           tbody.innerHTML = data.hotspot.clients.map(c => `
@@ -1034,19 +1095,20 @@
               <td>
                 <div style="display: flex; align-items: center; gap: 0.4rem;">
                   <strong>${c.name}</strong>
-                  <button onclick="renameDevice('${c.mac}', '${c.name.replace(/'/g, "\'")}')" title="${currentLang === 'en' ? 'Rename device' : 'Ubah nama perangkat'}" style="background: none; border: none; cursor: pointer; font-size: 0.85rem; opacity: 0.75; padding: 1px 4px; border-radius: 4px;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.75">✏️</button>
-                  <button onclick="deleteDevice('${c.mac}')" title="${currentLang === 'en' ? 'Delete from history' : 'Hapus dari riwayat'}" style="background: none; border: none; cursor: pointer; font-size: 0.85rem; opacity: 0.75; padding: 1px 4px; border-radius: 4px; color: #ef4444;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.75">🗑️</button>
+                  <button onclick="renameDevice('${c.mac}', '${c.name.replace(/'/g, "\\'")}')" title="${currentLang === 'en' ? 'Rename device' : 'Ubah nama'}" style="background: none; border: none; cursor: pointer; font-size: 0.85rem; opacity: 0.75; padding: 1px 4px; border-radius: 4px;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.75">✏️</button>
+                  <button onclick="deleteDevice('${c.mac}')" title="${currentLang === 'en' ? 'Delete from history' : 'Hapus'}" style="background: none; border: none; cursor: pointer; font-size: 0.85rem; opacity: 0.75; padding: 1px 4px; border-radius: 4px; color: #ef4444;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.75">🗑️</button>
                 </div>
               </td>
               <td><code>${c.ip}</code></td>
               <td><code>${c.mac}</code></td>
+              <td><span style="font-size: 0.82rem; color: ${c.status === 'OFFLINE' ? 'var(--text-muted)' : '#cbd5e1'}; font-weight: 500;">${c.lease_str || '-'}</span></td>
               <td style="color: #38bdf8; font-weight: 600;">↑ ${c.up_str || '0 B'}</td>
               <td style="color: #34d399; font-weight: 600;">↓ ${c.down_str || '0 B'}</td>
               <td><span class="badge ${c.status === 'FAILED' ? 'badge-danger' : (c.status === 'OFFLINE' ? 'badge-muted' : 'badge-success')}">${c.status}</span></td>
             </tr>
           `).join('');
         } else {
-          tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">${currentLang === 'en' ? 'No devices connected.' : 'Tidak ada perangkat terhubung.'}</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">${currentLang === 'en' ? 'No devices connected.' : 'Tidak ada perangkat terhubung.'}</td></tr>`;
         }
 
         // 2. Wi-Fi Client Status
@@ -1191,6 +1253,8 @@
         document.getElementById('hs-gateway').value = data.gateway || '10.10.10.1';
         document.getElementById('hs-dhcp-start').value = data.dhcp_start || 10;
         document.getElementById('hs-dhcp-end').value = data.dhcp_end || 100;
+        if (data.dhcp_lease) document.getElementById('hs-lease').value = data.dhcp_lease;
+        if (data.dhcp_alloc) document.getElementById('hs-alloc').value = data.dhcp_alloc;
         document.getElementById('hs-dns').value = data.dns_servers || '1.1.1.1,8.8.8.8';
 
         onSecurityChange();
@@ -1475,5 +1539,20 @@
       if (currentTab === 'overview') fetchStatus();
     }, 4000);
   </script>
+    <!-- Reboot Confirmation & Progress Modal -->
+    <div id="reboot-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(6px); z-index: 99999; justify-content: center; align-items: center;">
+      <div style="background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 2rem; max-width: 440px; width: 90%; text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);">
+        <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">🔄</div>
+        <h3 id="reboot-title" style="margin-bottom: 0.5rem; color: #f8fafc; font-size: 1.25rem;">Rebooting STB...</h3>
+        <p id="reboot-desc" style="color: #94a3b8; font-size: 0.9rem; line-height: 1.4; margin-bottom: 1.5rem;">
+          The FiberHome HG680-FJ is rebooting. Reconnecting automatically when services are up.
+        </p>
+        <div style="background: #0f172a; border-radius: 9999px; height: 10px; overflow: hidden; margin-bottom: 1rem;">
+          <div id="reboot-progress-bar" style="height: 100%; width: 100%; background: #38bdf8; transition: width 1s linear;"></div>
+        </div>
+        <div id="reboot-timer" style="font-size: 1.1rem; font-weight: 700; color: #38bdf8; font-family: monospace;">45s</div>
+      </div>
+    </div>
+
 </body>
 </html>
