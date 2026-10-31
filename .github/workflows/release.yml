@@ -1,0 +1,72 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build .deb Package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install packaging dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dpkg-dev
+
+      - name: Determine Version
+        id: vars
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            VER="${GITHUB_REF_NAME#v}"
+          else
+            VER=$(grep "^Version:" debian/control | awk '{print $2}')
+          fi
+          echo "VERSION=${VER}" >> $GITHUB_OUTPUT
+          echo "Building package version: ${VER}"
+
+      - name: Build Debian Package
+        run: |
+          chmod +x build-deb.sh
+          ./build-deb.sh "${{ steps.vars.outputs.VERSION }}"
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mt7663-router-webui_${{ steps.vars.outputs.VERSION }}_all.deb
+          path: mt7663-router-webui_*.deb
+
+      - name: Extract Changelog from CHANGELOG.md
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          chmod +x .github/scripts/extract-changelog.py
+          python3 .github/scripts/extract-changelog.py "${{ steps.vars.outputs.VERSION }}" > release_notes.md
+          cat release_notes.md
+
+      - name: Publish Release to GitHub Releases
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PRERELEASE_FLAG=""
+          TITLE_PREFIX="Release "
+          if [[ "${GITHUB_REF_NAME}" == *"rc"* ]] || [[ "${GITHUB_REF_NAME}" == *"beta"* ]]; then
+            PRERELEASE_FLAG="--prerelease"
+            TITLE_PREFIX=""
+          fi
+          gh release create "${GITHUB_REF_NAME}" \
+            mt7663-router-webui_*.deb \
+            --title "${TITLE_PREFIX}${GITHUB_REF_NAME}" \
+            --notes-file release_notes.md \
+            ${PRERELEASE_FLAG}
