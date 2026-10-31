@@ -17,11 +17,10 @@ chmod 755 /etc/update-motd.d/15-ap-info 2>/dev/null || true
 # Apply sysctl routing & ARP rules
 sysctl -p /etc/sysctl.d/99-mt7663.conf 2>/dev/null || true
 
-# Reload kernel module with ap_mode=1 if module is currently loaded without ap0
-if ! ip link show ap0 >/dev/null 2>&1 && lsmod | grep -q wlan_mt7663_sdio; then
-    echo "Reloading wlan_mt7663_sdio with ap_mode=1..."
-    modprobe -r wlan_mt7663_sdio 2>/dev/null || true
-    modprobe wlan_mt7663_sdio 2>/dev/null || true
+# Ensure module configuration options are active
+if ! ip link show ap0 >/dev/null 2>&1; then
+    echo "[INFO] Module options installed in /etc/modprobe.d/wlan_mt7663_sdio.conf"
+    echo "[INFO] If ap0 interface does not appear immediately, please reboot (sudo reboot) to cleanly initialize dual AP/STA mode on SDIO hardware."
 fi
 
 # Enable and start services

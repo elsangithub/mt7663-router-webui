@@ -551,6 +551,27 @@
         modalConnectTitle: 'Connect to Wi-Fi',
         lblModalPass: 'Wi-Fi Password',
         btnCancel: 'Cancel',
+                lblHsBand: 'Wireless Band (Frequency)',
+        optBand2g: '2.4 GHz (802.11n HT40 - Recommended for Repeater)',
+        optBand5g: '5 GHz (802.11ac VHT80 - High Speed for LAN)',
+        hintHsBand: 'Choose 2.4 GHz for true DBDC repeater mode (when wlan0 is on 5 GHz).',
+        hsWarnTitle: 'Repeater Mode Performance Warning',
+        hsWarnDesc: 'Wi-Fi Client (wlan0) is currently connected on 5 GHz. Running both Hotspot and Client on 5 GHz forces the single radio to time-slice frequencies, which may cause buffer overflow or freeze during high-speed tests. Switching Hotspot to 2.4 GHz is strongly recommended.',
+        boxDohInfo: '💡 <strong>DoH / Private DNS Tip:</strong> Standard DHCP distributes IPv4 DNS (UDP/53). To enjoy full encrypted DNS over HTTPS (DoH) or DNS over TLS (DoT), you can activate <strong>Private DNS</strong> in your phone/PC settings (e.g., <code>dns.adguard-dns.com</code> or <code>one.one.one.one</code>).',
+        secWpa2Psk: 'WPA2-Personal (AES/CCMP) - [Recommended / Highly Compatible]',
+        secWpa2Wpa3: 'WPA2 / WPA3-Personal Mixed (WPA-PSK + SAE)',
+        secWpa3: 'WPA3-Personal Only (SAE - Highest Security)',
+        secOpen: 'Open (No Password / Unsecured)',
+        dnsPresetCf: 'Cloudflare (1.1.1.1, 1.0.0.1) - Fastest & Privacy',
+        dnsPresetCfSec: 'Cloudflare Security (1.1.1.2, 1.0.0.2) - Malware Blocking',
+        dnsPresetCfFam: 'Cloudflare Family (1.1.1.3, 1.0.0.3) - Malware + Adult Filter',
+        dnsPresetGoogle: 'Google Public DNS (8.8.8.8, 8.8.4.4) - Global & Reliable',
+        dnsPresetAdg: 'AdGuard DNS (94.140.14.14, 94.140.15.15) - Anti-Ads & Trackers',
+        dnsPresetAdgFam: 'AdGuard Family (94.140.14.15, 94.140.15.16) - Anti-Ads + SafeSearch',
+        dnsPresetQuad9: 'Quad9 (9.9.9.9, 149.112.112.112) - Threat & Phishing Protection',
+        dnsPresetOpendns: 'OpenDNS Home (208.67.222.222, 208.67.220.220)',
+        dnsPresetCustom: 'Custom (Specify Manually)',
+        lblModalForget: 'Forget Network',
         btnConnect: 'Connect'
       },
       id: {
@@ -628,6 +649,27 @@
         modalConnectTitle: 'Sambungkan ke Wi-Fi',
         lblModalPass: 'Kata Sandi Wi-Fi',
         btnCancel: 'Batal',
+                lblHsBand: 'Frekuensi Nirkabel (Band)',
+        optBand2g: '2.4 GHz (802.11n HT40 - Rekomendasi Repeater)',
+        optBand5g: '5 GHz (802.11ac VHT80 - Kecepatan Tinggi LAN)',
+        hintHsBand: 'Pilih 2.4 GHz untuk mode repeater DBDC sejati (saat wlan0 di 5 GHz).',
+        hsWarnTitle: 'Peringatan Performa Mode Repeater',
+        hsWarnDesc: 'Klien Wi-Fi (wlan0) saat ini terhubung di frekuensi 5 GHz. Menjalankan Hotspot dan Klien sekaligus di 5 GHz memaksa chip berbagi waktu (time-slice), yang dapat memicu freeze saat tes kecepatan tinggi. Sangat direkomendasikan mengalihkan Hotspot ke 2.4 GHz.',
+        boxDohInfo: '💡 <strong>Tips DoH / Private DNS:</strong> DHCP standar mendistribusikan DNS IPv4 (UDP/53). Untuk menikmati enkripsi penuh DNS over HTTPS (DoH) atau DNS over TLS (DoT), Anda dapat mengaktifkan <strong>DNS Pribadi (Private DNS)</strong> di setelan HP/laptop (contoh: <code>dns.adguard-dns.com</code> atau <code>one.one.one.one</code>).',
+        secWpa2Psk: 'WPA2-Personal (AES/CCMP) - [Rekomendasi / Kompatibel]',
+        secWpa2Wpa3: 'WPA2 / WPA3-Personal Campuran (WPA-PSK + SAE)',
+        secWpa3: 'WPA3-Personal Saja (SAE - Keamanan Tertinggi)',
+        secOpen: 'Terbuka (Tanpa Sandi / Tidak Aman)',
+        dnsPresetCf: 'Cloudflare (1.1.1.1, 1.0.0.1) - Tercepat & Privasi',
+        dnsPresetCfSec: 'Cloudflare Keamanan (1.1.1.2, 1.0.0.2) - Blokir Malware',
+        dnsPresetCfFam: 'Cloudflare Keluarga (1.1.1.3, 1.0.0.3) - Blokir Malware + Dewasa',
+        dnsPresetGoogle: 'Google Public DNS (8.8.8.8, 8.8.4.4) - Global & Andal',
+        dnsPresetAdg: 'AdGuard DNS (94.140.14.14, 94.140.15.15) - Blokir Iklan & Pelacak',
+        dnsPresetAdgFam: 'AdGuard Keluarga (94.140.14.15, 94.140.15.16) - Blokir Iklan + SafeSearch',
+        dnsPresetQuad9: 'Quad9 (9.9.9.9, 149.112.112.112) - Proteksi Ancaman & Phishing',
+        dnsPresetOpendns: 'OpenDNS Home (208.67.222.222, 208.67.220.220)',
+        dnsPresetCustom: 'Kustom (Tentukan Manual)',
+        lblModalForget: 'Lupakan Jaringan',
         btnConnect: 'Sambungkan'
       }
     };
@@ -720,6 +762,52 @@
       document.getElementById('lbl-modal-pass').innerText = t.lblModalPass;
       document.getElementById('btn-modal-cancel').innerText = t.btnCancel;
       document.getElementById('btn-modal-connect').innerText = t.btnConnect;
+
+            const elHsBand = document.getElementById('lbl-hs-band');
+      if (elHsBand) elHsBand.innerText = t.lblHsBand;
+      const opt2g = document.getElementById('opt-band-2g');
+      if (opt2g) opt2g.text = t.optBand2g;
+      const opt5g = document.getElementById('opt-band-5g');
+      if (opt5g) opt5g.text = t.optBand5g;
+      const hintBand = document.getElementById('hint-hs-band');
+      if (hintBand) hintBand.innerText = t.hintHsBand;
+      const warnTitle = document.getElementById('hs-warn-title');
+      if (warnTitle) warnTitle.innerText = t.hsWarnTitle;
+      const warnDesc = document.getElementById('hs-warn-desc');
+      if (warnDesc) warnDesc.innerText = t.hsWarnDesc;
+      const dohInfo = document.getElementById('box-doh-info');
+      if (dohInfo) dohInfo.innerHTML = t.boxDohInfo;
+      const modalForget = document.getElementById('lbl-modal-forget');
+      if (modalForget) modalForget.innerText = t.lblModalForget;
+
+      const secSelect = document.getElementById('hs-security');
+      if (secSelect) {
+        for (let opt of secSelect.options) {
+          if (opt.value === 'WPA2-PSK') opt.text = t.secWpa2Psk;
+          else if (opt.value === 'WPA2-WPA3') opt.text = t.secWpa2Wpa3;
+          else if (opt.value === 'WPA3') opt.text = t.secWpa3;
+          else if (opt.value === 'OPEN') opt.text = t.secOpen;
+        }
+      }
+
+      const dnsPreset = document.getElementById('hs-dns-preset');
+      if (dnsPreset) {
+        for (let opt of dnsPreset.options) {
+          if (opt.value === '1.1.1.1,1.0.0.1') opt.text = t.dnsPresetCf;
+          else if (opt.value === '1.1.1.2,1.0.0.2') opt.text = t.dnsPresetCfSec;
+          else if (opt.value === '1.1.1.3,1.0.0.3') opt.text = t.dnsPresetCfFam;
+          else if (opt.value === '8.8.8.8,8.8.4.4') opt.text = t.dnsPresetGoogle;
+          else if (opt.value === '94.140.14.14,94.140.15.15') opt.text = t.dnsPresetAdg;
+          else if (opt.value === '94.140.14.15,94.140.15.16') opt.text = t.dnsPresetAdgFam;
+          else if (opt.value === '9.9.9.9,149.112.112.112') opt.text = t.dnsPresetQuad9;
+          else if (opt.value === '208.67.222.222,208.67.220.220') opt.text = t.dnsPresetOpendns;
+          else if (opt.value === 'custom') opt.text = t.dnsPresetCustom;
+        }
+      }
+
+      if (typeof onBandChange === 'function') {
+        onBandChange();
+      }
 
       const logoutTxt = document.getElementById('txt-logout');
       if (logoutTxt) logoutTxt.innerText = (currentLang === 'en' ? 'Logout' : 'Keluar');
@@ -1002,37 +1090,40 @@
       const chanSel = document.getElementById('hs-chan');
       const widthSel = document.getElementById('hs-width');
       const warnBox = document.getElementById('hs-repeater-warning');
+      const curChan = chanSel.value;
+      const curWidth = widthSel.value;
+      const isEn = (currentLang === 'en');
 
       if (band === '2.4') {
         chanSel.innerHTML = `
-          <option value="1">Channel 1 (2412 MHz)</option>
-          <option value="6" selected>Channel 6 (2437 MHz) [Recommended]</option>
-          <option value="11">Channel 11 (2462 MHz)</option>
+          <option value="1">${isEn ? 'Channel 1 (2412 MHz)' : 'Kanal 1 (2412 MHz)'}</option>
+          <option value="6">${isEn ? 'Channel 6 (2437 MHz) [Recommended]' : 'Kanal 6 (2437 MHz) [Rekomendasi]'}</option>
+          <option value="11">${isEn ? 'Channel 11 (2462 MHz)' : 'Kanal 11 (2462 MHz)'}</option>
         `;
         widthSel.innerHTML = `
-          <option value="40" selected>40 MHz (802.11n HT40 - 300 Mbps)</option>
-          <option value="20">20 MHz (802.11n HT20 - 150 Mbps)</option>
+          <option value="40">${isEn ? '40 MHz (802.11n HT40 - 300 Mbps)' : '40 MHz (802.11n HT40 - 300 Mbps)'}</option>
+          <option value="20">${isEn ? '20 MHz (802.11n HT20 - 150 Mbps)' : '20 MHz (802.11n HT20 - 150 Mbps)'}</option>
         `;
         warnBox.style.display = 'none';
       } else {
         chanSel.innerHTML = `
-          <optgroup label="UNII-1 (Low Channels)">
-            <option value="36" selected>Channel 36 (5180 MHz)</option>
-            <option value="40">Channel 40 (5200 MHz)</option>
-            <option value="44">Channel 44 (5220 MHz)</option>
-            <option value="48">Channel 48 (5240 MHz)</option>
+          <optgroup label="${isEn ? 'UNII-1 (Low Channels)' : 'UNII-1 (Kanal Rendah)'}">
+            <option value="36">${isEn ? 'Channel 36 (5180 MHz)' : 'Kanal 36 (5180 MHz)'}</option>
+            <option value="40">${isEn ? 'Channel 40 (5200 MHz)' : 'Kanal 40 (5200 MHz)'}</option>
+            <option value="44">${isEn ? 'Channel 44 (5220 MHz)' : 'Kanal 44 (5220 MHz)'}</option>
+            <option value="48">${isEn ? 'Channel 48 (5240 MHz)' : 'Kanal 48 (5240 MHz)'}</option>
           </optgroup>
-          <optgroup label="UNII-3 (High Channels)">
-            <option value="149">Channel 149 (5745 MHz)</option>
-            <option value="153">Channel 153 (5765 MHz)</option>
-            <option value="157">Channel 157 (5785 MHz)</option>
-            <option value="161">Channel 161 (5805 MHz)</option>
+          <optgroup label="${isEn ? 'UNII-3 (High Channels)' : 'UNII-3 (Kanal Tinggi)'}">
+            <option value="149">${isEn ? 'Channel 149 (5745 MHz)' : 'Kanal 149 (5745 MHz)'}</option>
+            <option value="153">${isEn ? 'Channel 153 (5765 MHz)' : 'Kanal 153 (5765 MHz)'}</option>
+            <option value="157">${isEn ? 'Channel 157 (5785 MHz)' : 'Kanal 157 (5785 MHz)'}</option>
+            <option value="161">${isEn ? 'Channel 161 (5805 MHz)' : 'Kanal 161 (5805 MHz)'}</option>
           </optgroup>
         `;
         widthSel.innerHTML = `
-          <option value="80" selected>80 MHz (802.11ac VHT80 - Maximum Speed)</option>
-          <option value="40">40 MHz (802.11n/ac HT40 - Less Interference)</option>
-          <option value="20">20 MHz (802.11n/ac HT20 - Maximum Compatibility)</option>
+          <option value="80">${isEn ? '80 MHz (802.11ac VHT80 - Maximum Speed)' : '80 MHz (802.11ac VHT80 - Kecepatan Maksimum)'}</option>
+          <option value="40">${isEn ? '40 MHz (802.11n/ac HT40 - Less Interference)' : '40 MHz (802.11n/ac HT40 - Gangguan Lebih Sedikit)'}</option>
+          <option value="20">${isEn ? '20 MHz (802.11n/ac HT20 - Maximum Compatibility)' : '20 MHz (802.11n/ac HT20 - Kompatibilitas Maksimum)'}</option>
         `;
 
         if (lastHotspotData && lastHotspotData.wlan_connected && lastHotspotData.wlan_band === '5') {
@@ -1041,6 +1132,9 @@
           warnBox.style.display = 'none';
         }
       }
+
+      if (curChan) chanSel.value = curChan;
+      if (curWidth) widthSel.value = curWidth;
     }
 
     async function loadHotspotForm() {
