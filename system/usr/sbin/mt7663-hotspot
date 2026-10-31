@@ -50,6 +50,8 @@ start_hotspot() {
         exit 1
     fi
 
+    mkdir -p /var/run/hostapd
+    chmod 755 /var/run/hostapd 2>/dev/null || true
     ip addr flush dev "$AP_IF" 2>/dev/null || true
     ip addr add "${AP_GATEWAY}/${AP_CIDR}" dev "$AP_IF"
     ip link set "$AP_IF" mtu "$AP_MTU"
@@ -155,7 +157,9 @@ stop_hotspot() {
     iptables -t mangle -D FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu 2>/dev/null || true
 
     if ip link show "$AP_IF" >/dev/null 2>&1; then
-        ip addr flush dev "$AP_IF" 2>/dev/null || true
+        mkdir -p /var/run/hostapd
+    chmod 755 /var/run/hostapd 2>/dev/null || true
+    ip addr flush dev "$AP_IF" 2>/dev/null || true
         ip link set "$AP_IF" down 2>/dev/null || true
     fi
     echo "[INFO] MT7663 Hotspot stopped."

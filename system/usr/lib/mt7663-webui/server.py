@@ -373,17 +373,34 @@ def get_connected_clients():
     device_cache = load_device_cache()
     cache_dirty = False
 
-    # Check real-time associated Wi-Fi stations on ap0 via iw
-    code_sta, stdout_sta, _ = run_cmd(["iw", "dev", "ap0", "station", "dump"])
-    wifi_station_check_ok = (code_sta == 0)
+    # Check real-time associated Wi-Fi stations on ap0 via hostapd_cli
     active_wifi_stas = set()
-    if wifi_station_check_ok and stdout_sta:
-        for line in stdout_sta.splitlines():
-            line = line.strip()
-            if line.startswith("Station "):
-                parts = line.split()
-                if len(parts) >= 2:
-                    active_wifi_stas.add(parts[1].lower())
+    code_sta, stdout_sta, _ = run_cmd(["hostapd_cli", "-i", "ap0", "all_sta"])
+    if code_sta == 0 and stdout_sta:
+        macs = re.findall(r"([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5})", stdout_sta.lower())
+        for m in macs:
+            active_wifi_stas.add(m)
+    else:
+        # Fallback to iw station dump if hostapd_cli is unavailable
+        code_iw, stdout_iw, _ = run_cmd(["iw", "dev", "ap0", "station", "dump"])
+        if code_iw == 0 and stdout_iw:
+            for line in stdout_iw.splitlines():
+                if line.strip().startswith("Station "):
+                    parts = line.strip().split()
+                    if len(parts) >= 2:
+                        active_wifi_stas.add(parts[1].lower())
+
+    # Check ARP state via ip neigh show dev ap0
+    neigh_states = {}
+    code_arp, stdout_arp, _ = run_cmd(["ip", "neigh", "show", "dev", "ap0"])
+    if code_arp == 0 and stdout_arp:
+        for line in stdout_arp.splitlines():
+            parts = line.split()
+            if len(parts) >= 4 and "lladdr" in parts:
+                ip = parts[0]
+                mac = parts[parts.index("lladdr") + 1].lower()
+                state = parts[-1]
+                neigh_states[mac] = (ip, state)
 
     # 1. Read dnsmasq leases
     if os.path.exists(DNSMASQ_LEASES):
@@ -407,7 +424,13 @@ def get_connected_clients():
                             seen_macs.add(mac)
                             ensure_client_accounting(ip)
                             c_traf = traffic_data.get(ip, {"up_bytes": 0, "down_bytes": 0})
-                            initial_status = ("CONNECTED" if (mac in active_wifi_stas) else "OFFLINE") if wifi_station_check_ok else "OFFLINE"
+                            
+                            # Dual-verification: hostapd association OR reachable ARP
+                            arp_state = neigh_states.get(mac, (None, "OFFLINE"))[1]
+                            if mac in active_wifi_stas or arp_state in ["REACHABLE", "DELAY"]:
+                                status = "CONNECTED"
+                            else:
+                                status = "OFFLINE"
                             
                             # Calculate remaining lease time from epoch timestamp
                             try:
@@ -435,7 +458,7 @@ def get_connected_clients():
                                 "ip": ip,
                                 "mac": mac,
                                 "name": name,
-                                "status": initial_status,
+                                "status": status,
                                 "lease_exp": lease_exp,
                                 "lease_sec": rem_sec,
                                 "lease_str": lease_str,
@@ -447,53 +470,26 @@ def get_connected_clients():
         except Exception:
             pass
 
-    # 2. Check ARP state via ip neigh show dev ap0
-    code, stdout, _ = run_cmd(["ip", "neigh", "show", "dev", "ap0"])
-    if code == 0 and stdout:
-        neigh_states = {}
-        for line in stdout.splitlines():
-            parts = line.split()
-            if len(parts) >= 4 and "lladdr" in parts:
-                ip = parts[0]
-                mac = parts[parts.index("lladdr") + 1].lower()
-                state = parts[-1]
-                neigh_states[mac] = (ip, state)
-
-        # If wifi station check is not available, fallback to ARP state
-        if not wifi_station_check_ok:
-            for c in clients:
-                if c["mac"] in neigh_states:
-                    arp_state = neigh_states[c["mac"]][1]
-                    c["status"] = "CONNECTED" if arp_state in ["REACHABLE", "DELAY"] else "OFFLINE"
-                else:
-                    c["status"] = "OFFLINE"
-                if c["name"] == "Unknown" and c["mac"] in device_cache:
-                    c["name"] = device_cache[c["mac"]]
-
-        # Add any ARP entries not found in leases
-        for mac, (ip, state) in neigh_states.items():
-            if mac not in seen_macs:
-                # Ignore stale ARP for disconnected devices if station check is working
-                if wifi_station_check_ok and mac not in active_wifi_stas:
-                    continue
-                seen_macs.add(mac)
-                ensure_client_accounting(ip)
-                c_traf = traffic_data.get(ip, {"up_bytes": 0, "down_bytes": 0})
-                name = device_cache.get(mac, "Unknown")
-                is_conn = (mac in active_wifi_stas) if wifi_station_check_ok else (state in ["REACHABLE", "DELAY"])
-                clients.append({
-                    "ip": ip,
-                    "mac": mac,
-                    "name": name,
-                    "status": "CONNECTED" if is_conn else "OFFLINE",
-                    "lease_exp": 0,
-                    "lease_sec": 0,
-                    "lease_str": "-",
-                    "up_bytes": c_traf["up_bytes"],
-                    "down_bytes": c_traf["down_bytes"],
-                    "up_str": format_bytes(c_traf["up_bytes"]),
-                    "down_str": format_bytes(c_traf["down_bytes"])
-                })
+    # 2. Add any active ARP entries not found in leases
+    for mac, (ip, state) in neigh_states.items():
+        if mac not in seen_macs and state in ["REACHABLE", "DELAY"]:
+            seen_macs.add(mac)
+            ensure_client_accounting(ip)
+            c_traf = traffic_data.get(ip, {"up_bytes": 0, "down_bytes": 0})
+            name = device_cache.get(mac, "Unknown")
+            clients.append({
+                "ip": ip,
+                "mac": mac,
+                "name": name,
+                "status": "CONNECTED",
+                "lease_exp": 0,
+                "lease_sec": 0,
+                "lease_str": "-",
+                "up_bytes": c_traf["up_bytes"],
+                "down_bytes": c_traf["down_bytes"],
+                "up_str": format_bytes(c_traf["up_bytes"]),
+                "down_str": format_bytes(c_traf["down_bytes"])
+            })
 
     if cache_dirty:
         save_device_cache(device_cache)
@@ -902,6 +898,7 @@ rsn_pairwise=CCMP"""
     hostapd_content = f"""# MT7663 SoftAP Configuration
 # FiberHome HG680-FJ (Amlogic S905X2 / Meson G12A)
 interface=ap0
+ctrl_interface=/var/run/hostapd
 driver=nl80211
 ssid={ssid}
 hw_mode={hw_mode}
