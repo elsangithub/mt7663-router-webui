@@ -358,17 +358,18 @@ def get_connected_clients():
     device_cache = load_device_cache()
     cache_dirty = False
 
-    # Check real-time associated Wi-Fi stations on ap0
+    # Check real-time associated Wi-Fi stations on ap0 via iw
     code_sta, stdout_sta, _ = run_cmd(["iw", "dev", "ap0", "station", "dump"])
+    wifi_station_check_ok = (code_sta == 0)
     active_wifi_stas = set()
-    if code_sta == 0 and stdout_sta:
+    if wifi_station_check_ok and stdout_sta:
         for line in stdout_sta.splitlines():
             line = line.strip()
             if line.startswith("Station "):
                 parts = line.split()
                 if len(parts) >= 2:
                     active_wifi_stas.add(parts[1].lower())
-    
+
     # 1. Read dnsmasq leases
     if os.path.exists(DNSMASQ_LEASES):
         try:
@@ -391,7 +392,7 @@ def get_connected_clients():
                             seen_macs.add(mac)
                             ensure_client_accounting(ip)
                             c_traf = traffic_data.get(ip, {"up_bytes": 0, "down_bytes": 0})
-                            initial_status = "CONNECTED" if (not active_wifi_stas or mac in active_wifi_stas) else "OFFLINE"
+                            initial_status = ("CONNECTED" if (mac in active_wifi_stas) else "OFFLINE") if wifi_station_check_ok else "OFFLINE"
                             clients.append({
                                 "ip": ip,
                                 "mac": mac,
@@ -417,33 +418,33 @@ def get_connected_clients():
                 state = parts[-1]
                 neigh_states[mac] = (ip, state)
 
-        # Update existing clients state
-        for c in clients:
-            if c["mac"] in neigh_states:
-                arp_state = neigh_states[c["mac"]][1]
-                if active_wifi_stas and c["mac"] not in active_wifi_stas:
-                    c["status"] = "OFFLINE"
+        # If wifi station check is not available, fallback to ARP state
+        if not wifi_station_check_ok:
+            for c in clients:
+                if c["mac"] in neigh_states:
+                    arp_state = neigh_states[c["mac"]][1]
+                    c["status"] = "CONNECTED" if arp_state in ["REACHABLE", "DELAY"] else "OFFLINE"
                 else:
-                    c["status"] = arp_state
+                    c["status"] = "OFFLINE"
                 if c["name"] == "Unknown" and c["mac"] in device_cache:
                     c["name"] = device_cache[c["mac"]]
-            elif active_wifi_stas and c["mac"] not in active_wifi_stas:
-                c["status"] = "OFFLINE"
 
         # Add any ARP entries not found in leases
         for mac, (ip, state) in neigh_states.items():
-            if mac not in seen_macs and state in ["REACHABLE", "DELAY", "PROBE", "STALE"]:
-                if active_wifi_stas and mac not in active_wifi_stas:
-                    continue  # Ignore stale ARP for disconnected devices
+            if mac not in seen_macs:
+                # Ignore stale ARP for disconnected devices if station check is working
+                if wifi_station_check_ok and mac not in active_wifi_stas:
+                    continue
                 seen_macs.add(mac)
                 ensure_client_accounting(ip)
                 c_traf = traffic_data.get(ip, {"up_bytes": 0, "down_bytes": 0})
                 name = device_cache.get(mac, "Unknown")
+                is_conn = (mac in active_wifi_stas) if wifi_station_check_ok else (state in ["REACHABLE", "DELAY"])
                 clients.append({
                     "ip": ip,
                     "mac": mac,
                     "name": name,
-                    "status": state,
+                    "status": "CONNECTED" if is_conn else "OFFLINE",
                     "up_bytes": c_traf["up_bytes"],
                     "down_bytes": c_traf["down_bytes"],
                     "up_str": format_bytes(c_traf["up_bytes"]),
@@ -696,7 +697,7 @@ def api_status():
             "dhcp_end": net_cfg["dhcp_end"],
             "dns_servers": net_cfg["dns_servers"],
             "clients": clients,
-            "client_count": len(clients)
+            "client_count": sum(1 for c in clients if c.get("status") == "CONNECTED")
         },
         "wifi_client": wifi_client,
         "upstream": upstream,
@@ -1088,7 +1089,9 @@ def api_wifi_disconnect():
 
 @app.post('/api/devices/rename')
 def api_rename_device():
-    check_auth()
+    if not is_authenticated():
+        response.status = 401
+        return {"status": "error", "message": "Unauthorized. Please log in first."}
     try:
         data = request.json or {}
         mac = str(data.get("mac", "")).lower().strip()
@@ -1107,7 +1110,9 @@ def api_rename_device():
 
 @app.post('/api/devices/delete')
 def api_delete_device():
-    check_auth()
+    if not is_authenticated():
+        response.status = 401
+        return {"status": "error", "message": "Unauthorized. Please log in first."}
     try:
         data = request.json or {}
         mac = str(data.get("mac", "")).lower().strip()
@@ -1115,10 +1120,30 @@ def api_delete_device():
             response.status = 400
             return {"status": "error", "message": "MAC is required"}
         
+        # 1. Remove from device_cache
         cache = load_device_cache()
         if mac in cache:
             del cache[mac]
             save_device_cache(cache)
+
+        # 2. Remove from dnsmasq.leases if present
+        if os.path.exists(DNSMASQ_LEASES):
+            try:
+                new_lines = []
+                with open(DNSMASQ_LEASES, "r") as f:
+                    for line in f:
+                        parts = line.strip().split()
+                        if len(parts) >= 2 and parts[1].lower() == mac:
+                            continue
+                        new_lines.append(line)
+                with open(DNSMASQ_LEASES, "w") as f:
+                    f.writelines(new_lines)
+            except Exception:
+                pass
+
+        # 3. Flush ARP for ap0
+        run_cmd(["ip", "neigh", "flush", "dev", "ap0"])
+
         return {"status": "ok", "message": f"Device {mac} removed from history."}
     except Exception as e:
         response.status = 500
@@ -1126,20 +1151,57 @@ def api_delete_device():
 
 @app.post('/api/dhcp/release')
 def api_dhcp_release():
-    check_auth()
+    if not is_authenticated():
+        response.status = 401
+        return {"status": "error", "message": "Unauthorized. Please log in first."}
     try:
+        # 1. Truncate leases file
         if os.path.exists(DNSMASQ_LEASES):
             with open(DNSMASQ_LEASES, "w") as f:
                 f.truncate(0)
         
+        # 2. Flush ARP cache on ap0
+        run_cmd(["ip", "neigh", "flush", "dev", "ap0"])
+
+        # 3. Restart dnsmasq cleanly so in-memory leases are cleared
+        d_cfg = read_default_config()
+        gw = d_cfg.get("AP_GATEWAY", "10.10.10.1")
+        netmask = d_cfg.get("AP_NETMASK", "255.255.255.0")
+        subnet_base = ".".join(gw.split(".")[:3])
+        dhcp_start = d_cfg.get("DHCP_START", "10")
+        dhcp_end = d_cfg.get("DHCP_END", "100")
+        dhcp_lease = d_cfg.get("DHCP_LEASE", "12h")
+        dns_servers = d_cfg.get("DNS_SERVERS", "1.1.1.1,8.8.8.8")
+        ap_mtu = d_cfg.get("AP_MTU", "1408")
+        dhcp_range = f"{subnet_base}.{dhcp_start},{subnet_base}.{dhcp_end},{netmask},{dhcp_lease}"
+
+        # Terminate running dnsmasq
         if os.path.exists(DNSMASQ_PID):
             try:
                 with open(DNSMASQ_PID, "r") as f:
-                    pid = int(f.read().strip())
-                os.kill(pid, signal.SIGHUP)
+                    old_pid = int(f.read().strip())
+                os.kill(old_pid, signal.SIGKILL)
             except Exception:
                 pass
-        return {"status": "ok", "message": "DHCP leases flushed successfully (Sewa DHCP berhasil dirilis)."}
+        run_cmd(["pkill", "-9", "-f", "dnsmasq.*ap0"])
+        time.sleep(0.3)
+
+        # Start fresh dnsmasq
+        dns_cmd = [
+            "dnsmasq",
+            "-C", "/dev/null",
+            "-p", "0",
+            "-i", "ap0",
+            "--bind-interfaces",
+            f"--dhcp-range={dhcp_range}",
+            f"--dhcp-option=3,{gw}",
+            f"--dhcp-option=6,{dns_servers}",
+            f"--dhcp-option=26,{ap_mtu}",
+            f"--pid-file={DNSMASQ_PID}"
+        ]
+        subprocess.Popen(dns_cmd)
+
+        return {"status": "ok", "message": "DHCP leases flushed and service refreshed successfully (Sewa DHCP berhasil dirilis)."}
     except Exception as e:
         response.status = 500
         return {"status": "error", "message": f"Failed releasing DHCP leases: {e}"}
