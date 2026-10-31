@@ -1,13 +1,27 @@
+<p align="right">
+  <a href="README.md">English</a> | <b>Bahasa Indonesia</b>
+</p>
+
 # MT7663 Router Web UI & Turnkey SoftAP Hotspot (Panduan Bahasa Indonesia)
 
-[![Lisensi](https://img.shields.io/badge/lisensi-GPLv2-blue.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Amlogic%20S905X2%20%7C%20HG680--FJ-orange.svg)]()
-[![Debian](https://img.shields.io/badge/debian-Bookworm%20%7C%20Armbian-red.svg)]()
-[![Versi](https://img.shields.io/badge/versi-1.0.1-green.svg)]()
+[![Rilis](https://img.shields.io/github/v/release/elsangithub/mt7663-router-webui?color=blue&label=rilis)](https://github.com/elsangithub/mt7663-router-webui/releases)
+[![Build](https://img.shields.io/github/actions/workflow/status/elsangithub/mt7663-router-webui/release.yml?branch=main&label=build)](https://github.com/elsangithub/mt7663-router-webui/actions)
+[![Platform](https://img.shields.io/badge/Platform-FiberHome%20HG680--FJ%20(S905X2)-orange.svg)]()
+[![OS](https://img.shields.io/badge/OS-Armbian%20Linux%206.18%2B%20(Ophub)-blue.svg)]()
+[![Paket](https://img.shields.io/badge/Paket-Debian%2012%20(Bookworm)-red.svg)]()
+[![Lisensi: GPL-2.0](https://img.shields.io/badge/Lisensi-GPL_2.0-blue.svg)](LICENSE)
 
 Dashboard web manajemen router WSGI yang sangat ringan (tanpa dependensi berat) dan pengendali SoftAP hotspot terintegrasi khusus untuk modul Wi-Fi **MediaTek MT7663** SDIO pada STB **FiberHome HG680-FJ** (Amlogic S905X2 / Meson G12A) dengan sistem operasi Armbian Linux.
 
 Paket ini mengubah STB Anda menjadi **Router Wi-Fi Repeater Mandiri (DBDC - Dual-Band Concurrent)** tanpa membutuhkan dongle Wi-Fi USB tambahan.
+
+---
+
+### 🧪 Lingkungan Pengujian Resmi
+* **Perangkat Target**: FiberHome HG680-FJ (Amlogic S905X2 / Meson G12A)
+* **Modul Wi-Fi**: MediaTek MT7663 / MT7661 SDIO (`037A:7663`)
+* **Sistem Operasi**: Armbian v26.11.0 for Aml.S905x2 (Linux kernel `6.18.56-ophub`)
+* **Basis Paket**: Debian stable (Bookworm 12)
 
 ---
 
@@ -57,8 +71,8 @@ Paket ini mengubah STB Anda menjadi **Router Wi-Fi Repeater Mandiri (DBDC - Dual
 
 Sebelum memasang paket Web UI ini, pastikan paket driver murni DKMS telah terpasang:
 
-1. **Driver Kernel**: [`mt7663-dkms`](https://github.com/elsangithub/mt7663-driver) (versi `1.0.8-rc5` atau lebih baru).
-2. **Sistem Operasi**: Armbian Linux (Debian 12 Bookworm / Kernel Linux 6.18+).
+1. **Driver Kernel**: [`mt7663-dkms`](https://github.com/elsangithub/mt7663-driver) (versi **1.0.8** atau lebih baru).
+2. **Sistem Operasi**: Armbian Linux (`6.18.56-ophub` / basis Debian 12 Bookworm).
 
 ---
 

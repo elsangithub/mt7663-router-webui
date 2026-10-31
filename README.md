@@ -1,13 +1,27 @@
+<p align="right">
+  <b>English</b> | <a href="README.id.md">Bahasa Indonesia</a>
+</p>
+
 # MT7663 Router Web UI & Turnkey SoftAP Hotspot
 
-[![License](https://img.shields.io/badge/license-GPLv2-blue.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Amlogic%20S905X2%20%7C%20HG680--FJ-orange.svg)]()
-[![Debian](https://img.shields.io/badge/debian-Bookworm%20%7C%20Armbian-red.svg)]()
-[![Version](https://img.shields.io/badge/version-1.0.1-green.svg)]()
+[![Release](https://img.shields.io/github/v/release/elsangithub/mt7663-router-webui?color=blue&label=release)](https://github.com/elsangithub/mt7663-router-webui/releases)
+[![Build](https://img.shields.io/github/actions/workflow/status/elsangithub/mt7663-router-webui/release.yml?branch=main&label=build)](https://github.com/elsangithub/mt7663-router-webui/actions)
+[![Platform](https://img.shields.io/badge/Platform-FiberHome%20HG680--FJ%20(S905X2)-orange.svg)]()
+[![OS](https://img.shields.io/badge/OS-Armbian%20Linux%206.18%2B%20(Ophub)-blue.svg)]()
+[![Packages](https://img.shields.io/badge/Packages-Debian%2012%20(Bookworm)-red.svg)]()
+[![License: GPL-2.0](https://img.shields.io/badge/License-GPL_2.0-blue.svg)](LICENSE)
 
 A lightweight, zero-dependency WSGI management dashboard and turnkey SoftAP hotspot controller designed for the MediaTek **MT7663** SDIO Wi-Fi module on the **FiberHome HG680-FJ** (Amlogic S905X2 / Meson G12A) running Armbian Linux.
 
 This package transforms your TV box into a standalone **Dual-Band Concurrent (DBDC) Wireless Repeater / Router** without requiring any external USB Wi-Fi dongles.
+
+---
+
+### 🧪 Verified Test Environment
+* **Target Hardware**: FiberHome HG680-FJ (Amlogic S905X2 / Meson G12A)
+* **Wi-Fi Module**: MediaTek MT7663 / MT7661 SDIO (`037A:7663`)
+* **Operating System**: Armbian v26.11.0 for Aml.S905x2 (Linux kernel `6.18.56-ophub`)
+* **Userspace / Packages**: Debian stable (Bookworm 12)
 
 ---
 
@@ -57,8 +71,8 @@ This package transforms your TV box into a standalone **Dual-Band Concurrent (DB
 
 Before installing this package, ensure you have installed the pure DKMS driver:
 
-1. **Kernel Driver**: [`mt7663-dkms`](https://github.com/elsangithub/mt7663-driver) (version `1.0.8-rc5` or higher).
-2. **Operating System**: Armbian (Debian 12 Bookworm / Linux Kernel 6.18+ recommended).
+1. **Kernel Driver**: [`mt7663-dkms`](https://github.com/elsangithub/mt7663-driver) (version **1.0.8** or higher).
+2. **Operating System**: Armbian Linux (`6.18.56-ophub` / Debian 12 Bookworm base).
 
 ---
 
