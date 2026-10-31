@@ -13,7 +13,7 @@
 
 A lightweight, zero-dependency WSGI management dashboard and turnkey SoftAP hotspot controller designed for the MediaTek **MT7663** SDIO Wi-Fi module on the **FiberHome HG680-FJ** (Amlogic S905X2 / Meson G12A) running Armbian Linux.
 
-This package transforms your TV box into a standalone **Dual-Band Concurrent (DBDC) Wireless Repeater / Router** without requiring any external USB Wi-Fi dongles.
+This package transforms your TV box into a standalone **Dual-Band Wireless Router & DBDC Repeater** with auto-switching upstream WAN support via **Ethernet (`eth0`)** or **Wi-Fi Client (`wlan0`)**, requiring no external USB Wi-Fi dongles.
 
 ---
 
@@ -25,16 +25,38 @@ This package transforms your TV box into a standalone **Dual-Band Concurrent (DB
 
 ---
 
+## 📸 Dashboard Previews
+
+<div align="center">
+
+### 1. Overview & Live Hardware Telemetry
+![Overview Dashboard](docs/screenshots/01-overview.png)
+
+<br>
+
+| 📡 5 GHz / 2.4 GHz SoftAP Configuration | 📶 Wi-Fi Client Scanner (STA Mode) |
+| :---: | :---: |
+| ![Hotspot Configuration](docs/screenshots/02-hotspot-config.png) | ![Wi-Fi Client Scanner](docs/screenshots/03-wifi-client.png) |
+
+<br>
+
+### 4. Router Administration & Security
+![Router Administration](docs/screenshots/04-admin.png)
+
+</div>
+
+---
+
 ## 🌟 Key Features
 
-* **DBDC Wireless Repeater (Dual AP/STA Mode)**:
-  * Uses the dedicated virtual interface `ap0` for the SoftAP Hotspot while `wlan0` connects to your home Wi-Fi or acts as a client simultaneously.
-  * Native 2.4 GHz (HT40) and 5 GHz (VHT80 866 Mbps) band support.
+* **Multi-Source WAN (Ethernet & Wireless Repeater)**:
+  * **Ethernet Access Point Mode (`eth0` WAN)**: Plugs directly into your main ISP modem/router via LAN cable and broadcasts ultra-fast 5 GHz (VHT80 866 Mbps) or 2.4 GHz wireless.
+  * **DBDC Wireless Repeater Mode (`wlan0` WAN)**: Receives home Wi-Fi wirelessly on `wlan0` while simultaneously re-broadcasting an isolated hotspot on `ap0`.
 * **Zero-Dependency WSGI Dashboard**:
   * Written in pure Python 3 using an embedded micro-framework (`bottle.py`). No Node.js, npm, or heavy web server runtimes required.
   * Consumes under **25 MB RAM**, ideal for minimal TV box environments.
 * **Full Bilingual Support (English & Bahasa Indonesia)**:
-  * Instant, one-click language toggle in the navigation bar.
+  * Instant, one-click language toggle (**ID / EN**) in the navigation bar.
   * Every dropdown menu, status badge, channel list, and security parameter is fully localized.
 * **Isolated Hotspot Stack**:
   * Dedicated `hostapd` and `dnsmasq` instances specifically bound to `ap0` (`10.10.10.1/24`).
@@ -51,19 +73,47 @@ This package transforms your TV box into a standalone **Dual-Band Concurrent (DB
 ## 📐 Network Architecture
 
 ```
-                 +-----------------------------------------------+
-                 |        FiberHome HG680-FJ (Amlogic S905X2)    |
-                 |                                               |
-[ Home Router ] <==== [wlan0 (STA)]                 [ap0 (AP)] ====> [ Phones / Laptops ]
- (Internet WAN)  |      DHCP Client                 10.10.10.1   |    (Hotspot Clients)
-                 |           \                           /       |
-                 |            +--- iptables NAT (MASQ) -+        |
-                 |            |    IPv4 Forwarding = 1  |        |
-                 |            |    Isolated dnsmasq     |        |
-                 |            +-------------------------+        |
-                 |            |   WSGI Dashboard :8080  |        |
-                 +------------+-------------------------+--------+
+       [ WAN Source 1: Wired LAN ]           [ WAN Source 2: Home Wi-Fi ]
+       Main Modem / Router (eth0)             Home Wi-Fi 2.4 / 5G (wlan0)
+                   │                                     │
+                   └─────────────────┬───────────────────┘
+                                     ▼
+                   +─────────────────────────────────────+
+                   |  FiberHome HG680-FJ (Amlogic S905X2)|
+                   |                                     |
+                   |      Auto-Detect WAN Interface      |
+                   |      (NetworkManager Dispatcher)    |
+                   |                 │                   |
+                   |        iptables NAT / Masquerade    |
+                   |        IPv4 IP Forwarding = 1       |
+                   |        Isolated dnsmasq (DHCP/DNS)  |
+                   |                 │                   |
+                   |  Dual-Band Hotspot Engine (ap0)     |
+                   |  2.4 GHz (HT40) / 5 GHz (VHT80 866M)|
+                   |                 │                   |
+                   |   WSGI Management Web UI (:8080)    |
+                   +─────────────────┬───────────────────+
+                                     │
+                                     ▼ SoftAP Broadcast
+                        [ Phones / Laptops / Smart TVs ]
 ```
+
+---
+
+## ⚡ 80 MHz Channel Width (VHT80): Capabilities & Trade-Offs
+
+The MT7663 chip supports **802.11ac Wave 2 VHT80** (80 MHz bandwidth). Understanding its capabilities and environmental trade-offs helps you achieve the best performance:
+
+### 🚀 Capabilities:
+* **866 Mbps Physical Link Rate**: When operating at 80 MHz with 2x2 MU-MIMO on 5 GHz, compatible client devices achieve theoretical link speeds of up to 866.7 Mbps.
+* **Real-World High Throughput**: Achieves **350–500 Mbps** actual throughput in iperf3/speed tests. Ideal for 4K video streaming, high-speed local NAS transfers, and low-latency gaming.
+* **Peak Performance with `eth0` WAN**: Using `eth0` as the wired WAN input allows the MT7663 radio to dedicate 100% of its RF airtime to client devices on `ap0` at full 80 MHz speeds.
+
+### ⚠️ Environmental Risks & Caveats:
+* **Reduced Wall Penetration**: High-frequency 5 GHz signals naturally experience higher attenuation through solid walls and concrete compared to 2.4 GHz.
+* **RF Spectrum Congestion**: An 80 MHz channel bonds 4 contiguous 20 MHz channels (e.g. 36 + 40 + 44 + 48). In densely populated apartment complexes with many nearby 5 GHz routers, channel collisions may trigger packet retries.
+* **Repeater Mode Caveat (5 GHz STA + 5 GHz AP)**: If you use `wlan0` to receive a 5 GHz network and simultaneously run `ap0` at 5 GHz 80 MHz, the single physical radio must rapidly time-slice between listening and transmitting. Under extreme workloads, this may lead to buffer overflow.  
+  * **Solution**: For wireless repeater mode, configure `wlan0` on 5 GHz and `ap0` on **2.4 GHz (HT40)**, or vice versa (True DBDC).
 
 ---
 
@@ -132,19 +182,6 @@ The package manages its configurations through standard Linux configuration path
 | `/etc/sysctl.d/99-mt7663.conf` | Kernel IP forwarding and ARP isolation parameters. |
 | `/etc/NetworkManager/dispatcher.d/90-wlan0-routing.sh` | Dispatcher hook that automatically updates iptables NAT whenever WAN connects. |
 | `/etc/mt7663-device-names.json` | Stores custom friendly names assigned to client devices in the Web UI. |
-
----
-
-## 📡 Best Practices for Wireless Repeater Mode
-
-When using the STB to receive Wi-Fi on `wlan0` and re-broadcast via `ap0` (Repeater Mode), adhere to the following frequency allocation:
-
-* **Recommended (True DBDC)**:
-  * Connect **`wlan0`** to your Home Wi-Fi on **5 GHz** (e.g. Channel 36 or 149).
-  * Configure the **`ap0`** Hotspot on **2.4 GHz** (Channel 6, 40 MHz).
-  * *Reason*: The MT7663 contains dedicated independent 2.4 GHz and 5 GHz baseband radios. Using opposing bands ensures zero airtime contention and maximum throughput.
-* **If both interfaces must use 5 GHz**:
-  * Set both `wlan0` and `ap0` to the same channel frequency to minimize time-slicing packet drops.
 
 ---
 
