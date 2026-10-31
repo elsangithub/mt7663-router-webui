@@ -1,0 +1,36 @@
+#!/bin/sh
+set -e
+
+# Disable system-wide dnsmasq to prevent DHCP port 67 binding conflicts
+systemctl stop dnsmasq 2>/dev/null || true
+systemctl disable dnsmasq 2>/dev/null || true
+
+# Clean up stale hostapd configurations completely
+rm -f /etc/hostapd/hostapd.conf /etc/hostapd/hostapd.conf.bak /etc/hostapd/*.conf.old 2>/dev/null || true
+
+# Set proper permissions
+chmod 755 /usr/sbin/mt7663-hotspot 2>/dev/null || true
+chmod 755 /etc/NetworkManager/dispatcher.d/90-wlan0-routing.sh 2>/dev/null || true
+chmod 755 /usr/lib/mt7663-webui/server.py 2>/dev/null || true
+chmod 755 /etc/update-motd.d/15-ap-info 2>/dev/null || true
+
+# Apply sysctl routing & ARP rules
+sysctl -p /etc/sysctl.d/99-mt7663.conf 2>/dev/null || true
+
+# Reload kernel module with ap_mode=1 if module is currently loaded without ap0
+if ! ip link show ap0 >/dev/null 2>&1 && lsmod | grep -q wlan_mt7663_sdio; then
+    echo "Reloading wlan_mt7663_sdio with ap_mode=1..."
+    modprobe -r wlan_mt7663_sdio 2>/dev/null || true
+    modprobe wlan_mt7663_sdio 2>/dev/null || true
+fi
+
+# Enable and start services
+if [ -d /run/systemd/system ]; then
+    systemctl daemon-reload 2>/dev/null || true
+    systemctl enable mt7663-hotspot.service 2>/dev/null || true
+    systemctl restart mt7663-hotspot.service 2>/dev/null || true
+    systemctl enable mt7663-webui.service 2>/dev/null || true
+    systemctl restart mt7663-webui.service 2>/dev/null || true
+fi
+
+echo "mt7663-router-webui installed successfully! Web UI available at http://10.10.10.1:8080"

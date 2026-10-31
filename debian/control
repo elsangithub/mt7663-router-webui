@@ -1,0 +1,12 @@
+Package: mt7663-router-webui
+Version: 1.0.0
+Section: net
+Priority: optional
+Architecture: all
+Depends: mt7663-dkms, hostapd, dnsmasq, python3, network-manager, iptables, wireless-tools, iw
+Maintainer: Van der Decken <elsangithub@users.noreply.github.com>
+Description: Turnkey SoftAP Hotspot & WSGI Router Management Web UI
+ Lightweight, zero-dependency WSGI management dashboard and SoftAP
+ hotspot controller for MediaTek MT7663 on FiberHome HG680-FJ.
+ Provides dual-band simultaneous Wi-Fi Repeater mode (DBDC),
+ dynamic bandwidth control, and live device telemetry.

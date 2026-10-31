@@ -1,0 +1,13 @@
+#!/bin/sh
+set -e
+
+# Stop and disable services cleanly
+if [ -d /run/systemd/system ]; then
+    systemctl stop mt7663-webui.service 2>/dev/null || true
+    systemctl disable mt7663-webui.service 2>/dev/null || true
+    systemctl stop mt7663-hotspot.service 2>/dev/null || true
+    systemctl disable mt7663-hotspot.service 2>/dev/null || true
+fi
+
+# Stop hotspot processes directly
+/usr/sbin/mt7663-hotspot stop 2>/dev/null || true
