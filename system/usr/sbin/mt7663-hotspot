@@ -138,8 +138,9 @@ start_hotspot() {
         [ -n "$srv" ] && DNS_UPSTREAM_ARGS="$DNS_UPSTREAM_ARGS --server=$srv"
     done
 
-    # Start dnsmasq with isolated bind (anti-conflict), 10,000-entry Turbo RAM cache, and parallel upstream query
+    # Start dnsmasq with isolated bind (anti-conflict), authoritative mode, 10,000-entry Turbo RAM cache, and parallel upstream query
     dnsmasq -C /dev/null -i "$AP_IF" --bind-interfaces --listen-address="${AP_GATEWAY}" \
+        --dhcp-authoritative \
         $DHCP_SEQ_ARG \
         --dhcp-range="${DHCP_RANGE}" \
         --dhcp-option=3,"${AP_GATEWAY}" \

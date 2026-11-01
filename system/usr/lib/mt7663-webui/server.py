@@ -1238,14 +1238,14 @@ def api_dhcp_release():
 
         # 3. Restart dnsmasq cleanly so in-memory leases are cleared
         d_cfg = read_default_config()
-        gw = d_cfg.get("AP_GATEWAY", "10.10.10.1")
-        netmask = d_cfg.get("AP_NETMASK", "255.255.255.0")
+        gw = d_cfg.get("gateway", "10.10.10.1")
+        netmask = d_cfg.get("netmask", "255.255.255.0")
         subnet_base = ".".join(gw.split(".")[:3])
-        dhcp_start = d_cfg.get("DHCP_START", "10")
-        dhcp_end = d_cfg.get("DHCP_END", "100")
-        dhcp_lease = d_cfg.get("DHCP_LEASE", "12h")
-        dns_servers = d_cfg.get("DNS_SERVERS", "1.1.1.1,8.8.8.8")
-        ap_mtu = d_cfg.get("AP_MTU", "1408")
+        dhcp_start = d_cfg.get("dhcp_start", 10)
+        dhcp_end = d_cfg.get("dhcp_end", 100)
+        dhcp_lease = d_cfg.get("dhcp_lease", "12h")
+        dns_servers = d_cfg.get("dns_servers", "1.1.1.1,8.8.8.8")
+        ap_mtu = d_cfg.get("mtu", 1408)
         dhcp_range = f"{subnet_base}.{dhcp_start},{subnet_base}.{dhcp_end},{netmask},{dhcp_lease}"
 
         # Terminate running dnsmasq
@@ -1259,24 +1259,34 @@ def api_dhcp_release():
         run_cmd(["pkill", "-9", "-f", "dnsmasq.*ap0"])
         time.sleep(0.3)
 
-        # Start fresh dnsmasq
+        # Start fresh dnsmasq with Turbo DNS, authoritative mode, and sequential option
         dhcp_alloc = d_cfg.get("dhcp_alloc", "sequential")
         dns_cmd = [
             "dnsmasq",
             "-C", "/dev/null",
-            "-p", "0",
             "-i", "ap0",
-            "--bind-interfaces"
+            "--bind-interfaces",
+            f"--listen-address={gw}",
+            "--dhcp-authoritative",
         ]
         if dhcp_alloc == "sequential":
             dns_cmd.append("--dhcp-sequential-ip")
         dns_cmd.extend([
             f"--dhcp-range={dhcp_range}",
             f"--dhcp-option=3,{gw}",
-            f"--dhcp-option=6,{dns_servers}",
+            f"--dhcp-option=6,{gw}",
             f"--dhcp-option=26,{ap_mtu}",
-            f"--pid-file={DNSMASQ_PID}"
+            "--cache-size=10000",
+            "--all-servers",
+            "--domain-needed",
+            "--bogus-priv",
+            "--no-resolv",
         ])
+        for srv in dns_servers.split(','):
+            srv = srv.strip()
+            if srv:
+                dns_cmd.append(f"--server={srv}")
+        dns_cmd.append(f"--pid-file={DNSMASQ_PID}")
         subprocess.Popen(dns_cmd)
 
         return {"status": "ok", "message": "DHCP leases flushed and service refreshed successfully (Sewa DHCP berhasil dirilis)."}
