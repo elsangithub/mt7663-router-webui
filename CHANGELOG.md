@@ -21,6 +21,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added a dedicated **Lease Time** (`Sisa Sewa`) column in the connected clients table displaying dynamic remaining lease countdown for each leased IP.
 - **Table Layout & Header Streamlining**:
   - Condensed `Device Name / Hostname` table header to simply `Hostname` for cleaner spacing and perfect responsiveness across mobile and desktop viewports.
+- **Multi-Core Network Packet Steering (RPS & XPS)**:
+  - Added automatic Receive Packet Steering (RPS) and Transmit Packet Steering (XPS) on interfaces `ap0` (Wi-Fi) and `eth0` (Ethernet WAN) targeting Cores 1, 2, and 3 (`rps_cpus = e`, `xps_cpus = e`), with `rps_flow_cnt = 4096` and `net.core.rps_sock_flow_entries = 32768`.
+  - Load-balances incoming and outgoing packet routing symmetrically across all CPU cores, eliminating single-core bottlenecks on CPU 0.
+- **CPU Governor Sweet Spot Tuning (Cooler Baseline & Low Jitter)**:
+  - Tuned `ondemand` governor parameters (`sampling_rate=20000` / 20ms, `up_threshold=60`, `sampling_down_factor=2`, `io_is_busy=0`).
+  - Allows CPU to rest stably at 1000 MHz (1.0 GHz) during idle to lower operating temperatures, while instantly bursting to 2.0 GHz within 0.02s during gaming or heavy network bursts.
 
 ### Fixed
 - **Station Disconnect & OFFLINE Status Accuracy**:

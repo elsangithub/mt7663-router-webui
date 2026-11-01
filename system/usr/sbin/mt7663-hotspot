@@ -63,12 +63,25 @@ start_hotspot() {
         tc qdisc replace dev "$AP_IF" root fq_codel 2>/dev/null || true
     fi
 
-    # Optimize CPU Governor latency responsiveness for gaming packets
+    # Enable Multi-Core Packet Steering (RPS & XPS) to distribute packet load across Core 1, 2, 3
+    for dev in "$AP_IF" "eth0"; do
+        if [ -d "/sys/class/net/$dev/queues/rx-0" ]; then
+            echo e > "/sys/class/net/$dev/queues/rx-0/rps_cpus" 2>/dev/null || true
+            echo 4096 > "/sys/class/net/$dev/queues/rx-0/rps_flow_cnt" 2>/dev/null || true
+        fi
+        if [ -d "/sys/class/net/$dev/queues/tx-0" ]; then
+            echo e > "/sys/class/net/$dev/queues/tx-0/xps_cpus" 2>/dev/null || true
+        fi
+    done
+    sysctl -q -w net.core.rps_sock_flow_entries=32768 2>/dev/null || true
+
+    # Optimize CPU Governor sweet spot (cool thermal baseline at 1.0 GHz, instant burst to 2.0 GHz)
     for gov in /sys/devices/system/cpu/cpufreq/ondemand /sys/devices/system/cpu/cpu0/cpufreq/ondemand; do
         if [ -d "$gov" ]; then
-            echo 25 > "${gov}/up_threshold" 2>/dev/null || true
-            echo 10 > "${gov}/sampling_down_factor" 2>/dev/null || true
-            echo 1 > "${gov}/io_is_busy" 2>/dev/null || true
+            echo 20000 > "${gov}/sampling_rate" 2>/dev/null || true
+            echo 60 > "${gov}/up_threshold" 2>/dev/null || true
+            echo 2 > "${gov}/sampling_down_factor" 2>/dev/null || true
+            echo 0 > "${gov}/io_is_busy" 2>/dev/null || true
         fi
     done
 

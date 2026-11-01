@@ -24,6 +24,7 @@ chmod 755 "${BUILD_DIR}/etc/update-motd.d/15-ap-info"
 # 2. Copy control scripts
 cp -a debian/* ${BUILD_DIR}/DEBIAN/
 sed -i "s/^Version:.*/Version: ${VERSION}/" ${BUILD_DIR}/DEBIAN/control
+chmod 755 ${BUILD_DIR}/DEBIAN
 chmod 755 ${BUILD_DIR}/DEBIAN/postinst ${BUILD_DIR}/DEBIAN/prerm ${BUILD_DIR}/DEBIAN/postrm
 
 dpkg-deb --build ${BUILD_DIR} ${TARGET_DEB}
