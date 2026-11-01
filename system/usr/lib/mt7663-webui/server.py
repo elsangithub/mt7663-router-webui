@@ -307,6 +307,40 @@ def read_default_config():
                     elif k == "WEBUI_USER": config["webui_user"] = v
     return config
 
+def save_default_config(updates=None):
+    """
+    Centralized, single source of truth for saving /etc/default/mt7663-hotspot.
+    Guarantees that all configuration keys are strictly preserved and never dropped.
+    """
+    cfg = read_default_config()
+    user_cred, pass_cred = get_auth_credentials()
+    cfg["webui_user"] = user_cred
+    cfg["webui_pass"] = pass_cred
+
+    if updates:
+        cfg.update(updates)
+
+    content = f"""# MediaTek MT7663 Hotspot Network Configuration
+# FiberHome HG680-FJ (Amlogic S905X2 / Meson G12A)
+
+AP_GATEWAY="{cfg.get('gateway', '10.10.10.1')}"
+AP_NETMASK="{cfg.get('netmask', '255.255.255.0')}"
+AP_CIDR="{cfg.get('cidr', '24')}"
+DHCP_START="{cfg.get('dhcp_start', 10)}"
+DHCP_END="{cfg.get('dhcp_end', 100)}"
+DHCP_LEASE="{cfg.get('dhcp_lease', '12h')}"
+DHCP_ALLOCATION="{cfg.get('dhcp_alloc', 'sequential')}"
+DNS_SERVERS="{cfg.get('dns_servers', '1.1.1.1,8.8.8.8')}"
+AP_MTU="{cfg.get('mtu', 1408)}"
+AP_WIDTH="{cfg.get('width', 80)}"
+AP_SECURITY="{cfg.get('security', 'WPA2-PSK')}"
+
+WEBUI_USER="{cfg.get('webui_user', 'admin')}"
+WEBUI_PASS="{cfg.get('webui_pass', 'admin')}"
+"""
+    with open(DEFAULT_CONF, "w") as f:
+        f.write(content)
+
 def get_iptables_traffic():
     """Reads byte counts from iptables HOTSPOT_ACCT chain for per-client UP and DOWN stats"""
     traffic = {} # {ip: {"up_bytes": 0, "down_bytes": 0}}
@@ -645,29 +679,8 @@ def api_auth_change_password():
         response.status = 400
         return {"status": "error", "message": "Password must be at least 4 characters."}
 
-    # Update DEFAULT_CONF
-    cfg = read_default_config()
-    content = f"""# MediaTek MT7663 Hotspot Network Configuration
-# FiberHome HG680-FJ (Amlogic S905X2 / Meson G12A)
-
-AP_GATEWAY="{cfg['gateway']}"
-AP_NETMASK="{cfg['netmask']}"
-AP_CIDR="{cfg['cidr']}"
-DHCP_START="{cfg['dhcp_start']}"
-DHCP_END="{cfg['dhcp_end']}"
-DHCP_LEASE="{cfg['dhcp_lease']}"
-DHCP_ALLOCATION="{cfg.get('dhcp_alloc', 'sequential')}"
-DNS_SERVERS="{cfg['dns_servers']}"
-AP_MTU="{cfg['mtu']}"
-AP_WIDTH="{cfg['width']}"
-AP_SECURITY="{cfg['security']}"
-
-WEBUI_USER="{new_user}"
-WEBUI_PASS="{new_pass}"
-"""
     try:
-        with open(DEFAULT_CONF, "w") as f:
-            f.write(content)
+        save_default_config({"webui_user": new_user, "webui_pass": new_pass})
         return {"status": "ok", "message": "Username and password updated successfully (Kredensial berhasil diperbarui)."}
     except Exception as e:
         response.status = 500
@@ -924,28 +937,17 @@ ieee80211n=1
         return {"status": "error", "message": f"Failed writing {HOSTAPD_CONF}: {e}"}
 
     # Write DEFAULT_CONF preserving credentials
-    user_cred, pass_cred = get_auth_credentials()
-    default_content = f"""# MediaTek MT7663 Hotspot Network Configuration
-# FiberHome HG680-FJ (Amlogic S905X2 / Meson G12A)
-
-AP_GATEWAY="{gateway}"
-AP_NETMASK="255.255.255.0"
-AP_CIDR="24"
-DHCP_START="{dhcp_start}"
-DHCP_END="{dhcp_end}"
-DHCP_LEASE="{dhcp_lease}"
-DHCP_ALLOCATION="{dhcp_alloc}"
-DNS_SERVERS="{dns_servers}"
-AP_MTU="1408"
-AP_WIDTH="{width}"
-AP_SECURITY="{security}"
-
-WEBUI_USER="{user_cred}"
-WEBUI_PASS="{pass_cred}"
-"""
     try:
-        with open(DEFAULT_CONF, "w") as f:
-            f.write(default_content)
+        save_default_config({
+            "gateway": gateway,
+            "dhcp_start": dhcp_start,
+            "dhcp_end": dhcp_end,
+            "dhcp_lease": dhcp_lease,
+            "dhcp_alloc": dhcp_alloc,
+            "dns_servers": dns_servers,
+            "width": width,
+            "security": security
+        })
     except Exception as e:
         response.status = 500
         return {"status": "error", "message": f"Failed writing {DEFAULT_CONF}: {e}"}
