@@ -952,6 +952,63 @@
       }
     }
 
+    async function deleteDevice(mac) {
+      const confirmMsg = (currentLang === 'en')
+        ? `Remove device [${mac}] from history and clear its DHCP lease?`
+        : `Hapus perangkat [${mac}] dari riwayat dan bersihkan sewa DHCP-nya?`;
+      if (!confirm(confirmMsg)) return;
+
+      try {
+        const res = await fetch('/api/devices/delete', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ mac: mac })
+        });
+        if (res.status === 401) {
+          document.getElementById('login-modal').style.display = 'flex';
+          return;
+        }
+        const data = await res.json();
+        if (data.status === 'ok') {
+          showToast(data.message);
+          fetchStatus();
+        } else {
+          alert('Error: ' + data.message);
+        }
+      } catch (err) {
+        alert('Network error: ' + err);
+      }
+    }
+
+    async function flushDhcpLeases() {
+      const confirmMsg = (currentLang === 'en')
+        ? "Release all DHCP leases and reset client IP pool? Connected clients will renew IPs sequentially."
+        : "Rilis semua sewa DHCP dan reset database IP? Klien terhubung akan mendapatkan IP baru secara berurutan.";
+      if (!confirm(confirmMsg)) return;
+
+      showToast(currentLang === 'en' ? "Releasing DHCP leases..." : "Merilis sewa DHCP...");
+      try {
+        const res = await fetch('/api/dhcp/release', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'}
+        });
+        if (res.status === 401) {
+          document.getElementById('login-modal').style.display = 'flex';
+          showToast(currentLang === 'en' ? 'Unauthorized. Please log in first.' : 'Sesi berakhir. Silakan login.', true);
+          return;
+        }
+        const data = await res.json();
+        if (data.status === 'ok') {
+          showToast(data.message);
+          setTimeout(fetchStatus, 1500);
+        } else {
+          showToast(data.message, true);
+        }
+      } catch (err) {
+        showToast("Error: " + err, true);
+      }
+    }
+
     function togglePass(inputId, btn) {
       const el = document.getElementById(inputId);
       if (el.type === 'password') {
@@ -1302,6 +1359,8 @@
         gateway: document.getElementById('hs-gateway').value,
         dhcp_start: parseInt(document.getElementById('hs-dhcp-start').value),
         dhcp_end: parseInt(document.getElementById('hs-dhcp-end').value),
+        dhcp_lease: document.getElementById('hs-lease').value,
+        dhcp_alloc: document.getElementById('hs-alloc').value,
         dns_servers: document.getElementById('hs-dns').value
       };
 
