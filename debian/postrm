@@ -13,6 +13,12 @@ case "$1" in
         # Re-apply default sysctl
         sysctl -p /etc/sysctl.d/99-wifi-throughput.conf 2>/dev/null || true
 
+        # Clean up governor tuning from Armbian Ophub custom service
+        OPHUB_START_SERVICE="/etc/custom_service/start_service.sh"
+        if [ -f "$OPHUB_START_SERVICE" ]; then
+            sed -i '/# MT7663-GOVERNOR-TUNING-START/,/# MT7663-GOVERNOR-TUNING-END/d' "$OPHUB_START_SERVICE" 2>/dev/null || true
+        fi
+
         # Reload driver back to pure wlan0 client mode
         if ip link show ap0 >/dev/null 2>&1 && lsmod | grep -q wlan_mt7663_sdio; then
             echo "Restoring wlan_mt7663_sdio to pure wlan0 mode..."

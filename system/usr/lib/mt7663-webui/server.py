@@ -37,7 +37,8 @@ def api_system_reboot():
         response.status = 401
         return {"status": "error", "message": "Unauthorized. Please log in first."}
     try:
-        subprocess.Popen(["sh", "-c", "sleep 1 && systemctl reboot || reboot"])
+        # Schedule reboot in 1 second to allow HTTP response to flush cleanly to browser
+        subprocess.Popen(["sh", "-c", "sleep 1 && (systemctl reboot || reboot || /sbin/reboot)"])
         return {"status": "ok", "message": "STB is rebooting... (STB sedang mulai ulang)"}
     except Exception as e:
         response.status = 500
@@ -202,11 +203,24 @@ def get_system_metrics():
         pass
     conntrack_pct = round((conntrack_count / conntrack_max * 100), 1) if conntrack_max > 0 else 0.0
 
+    # CPU Frequency (scaling_cur_freq in kHz)
+    cpu_freq_mhz = 0
+    for cpupath in ["/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq", "/sys/devices/system/cpu/cpufreq/policy0/scaling_cur_freq"]:
+        if os.path.exists(cpupath):
+            try:
+                with open(cpupath, "r") as f:
+                    khz = int(f.read().strip())
+                    cpu_freq_mhz = int(round(khz / 1000.0))
+                    break
+            except Exception:
+                pass
+
     return {
         "hostname": platform.node(),
         "kernel": platform.release(),
         "uptime_sec": uptime_sec,
         "loadavg": loadavg,
+        "cpu_freq_mhz": cpu_freq_mhz,
         "ram_total_mb": round(ram_total / (1024 * 1024), 1),
         "ram_used_mb": round(ram_used / (1024 * 1024), 1),
         "ram_percent": ram_percent,

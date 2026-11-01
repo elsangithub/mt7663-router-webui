@@ -23,6 +23,27 @@ if ! ip link show ap0 >/dev/null 2>&1; then
     echo "[INFO] If ap0 interface does not appear immediately, please reboot (sudo reboot) to cleanly initialize dual AP/STA mode on SDIO hardware."
 fi
 
+# Auto-configure CPU Governor Sweet Spot on Armbian Ophub builds
+OPHUB_START_SERVICE="/etc/custom_service/start_service.sh"
+if [ -f "$OPHUB_START_SERVICE" ]; then
+    # Remove existing block if present to ensure clean idempotency
+    sed -i '/# MT7663-GOVERNOR-TUNING-START/,/# MT7663-GOVERNOR-TUNING-END/d' "$OPHUB_START_SERVICE" 2>/dev/null || true
+    # Insert sweet spot tuning right after Ophub sets ondemand
+    sed -i '/log_message "CPU governor set to ondemand\."/r /dev/stdin' "$OPHUB_START_SERVICE" << 'EOF' 2>/dev/null || true
+
+# MT7663-GOVERNOR-TUNING-START
+for gov in /sys/devices/system/cpu/cpufreq/ondemand /sys/devices/system/cpu/cpu0/cpufreq/ondemand; do
+    if [ -d "$gov" ]; then
+        echo 20000 > "${gov}/sampling_rate" 2>/dev/null || true
+        echo 60 > "${gov}/up_threshold" 2>/dev/null || true
+        echo 2 > "${gov}/sampling_down_factor" 2>/dev/null || true
+        echo 0 > "${gov}/io_is_busy" 2>/dev/null || true
+    fi
+done
+# MT7663-GOVERNOR-TUNING-END
+EOF
+fi
+
 # Enable and start services
 if [ -d /run/systemd/system ]; then
     systemctl daemon-reload 2>/dev/null || true

@@ -220,7 +220,7 @@
           <div class="stat-row"><span class="stat-label">Kernel:</span><span id="st-kernel" class="stat-val">-</span></div>
           <div class="stat-row"><span class="stat-label" id="t-lbl-temp">SOC Temp:</span><span id="st-temp" class="stat-val">-</span></div>
           <div class="stat-row"><span class="stat-label">CPU Load:</span><span id="st-load" class="stat-val">-</span></div>
-          <div class="stat-row"><span class="stat-label" id="t-lbl-ram-usage">RAM Usage:</span><span id="st-ram-mb" class="stat-val">-</span></div>
+          <div class="stat-row"><span class="stat-label" id="t-lbl-cpu-freq">CPU Freq:</span><span id="st-cpu-freq" class="stat-val">-</span></div>
           <div class="stat-row"><span class="stat-label" id="t-lbl-ram-pct">RAM %:</span><span id="st-ram-pct" class="stat-val">-</span></div>
           <div class="stat-row"><span class="stat-label">Uptime:</span><span id="st-uptime" class="stat-val">-</span></div>
         </div>
@@ -546,7 +546,7 @@
         lblNatMode: 'Share Mode:',
         lblTemp: 'SOC Temp:',
         lblConntrack: 'Active NAT Sessions:',
-        lblRamUsage: 'RAM Usage:',
+        lblCpuFreq: 'CPU Freq:',
         lblRamPct: 'RAM %:',
         tableClientsTitle: 'Connected Devices',
         btnRefresh: 'Refresh',
@@ -658,7 +658,7 @@
         lblNatMode: 'Mode Bagikan:',
         lblConntrack: 'Sesi NAT Aktif:',
         lblTemp: 'Suhu SOC:',
-        lblRamUsage: 'Penggunaan RAM:',
+        lblCpuFreq: 'Freq CPU:',
         lblRamPct: 'Persentase RAM:',
         tableClientsTitle: 'Perangkat Terhubung',
         btnRefresh: 'Segarkan',
@@ -784,7 +784,8 @@
       document.getElementById('t-lbl-temp').innerText = t.lblTemp;
       const elConntrack = document.getElementById('t-lbl-conntrack');
       if (elConntrack) elConntrack.innerText = t.lblConntrack;
-      document.getElementById('t-lbl-ram-usage').innerText = t.lblRamUsage;
+      const elCpuFreq = document.getElementById('t-lbl-cpu-freq');
+      if (elCpuFreq) elCpuFreq.innerText = t.lblCpuFreq;
       document.getElementById('t-lbl-ram-pct').innerText = t.lblRamPct;
 
       document.getElementById('t-table-clients-title').innerText = t.tableClientsTitle;
@@ -1225,8 +1226,16 @@
           document.getElementById('st-conntrack').innerText = (data.system.conntrack_max ? `${data.system.conntrack_count} / ${data.system.conntrack_max.toLocaleString()} (${data.system.conntrack_percent}%)` : '-');
         }
         
-        // RAM usage in 2 clean lines as requested
-        document.getElementById('st-ram-mb').innerText = `${data.system.ram_used_mb} MB / ${data.system.ram_total_mb} MB`;
+        // CPU Frequency & RAM %
+        const elCpuFreq = document.getElementById('st-cpu-freq');
+        if (elCpuFreq) {
+          const mhz = data.system.cpu_freq_mhz;
+          if (mhz && mhz > 0) {
+            elCpuFreq.innerText = mhz >= 1000 ? `${(mhz / 1000).toFixed(2)} GHz` : `${mhz} MHz`;
+          } else {
+            elCpuFreq.innerText = '-';
+          }
+        }
         document.getElementById('st-ram-pct').innerText = `${data.system.ram_percent}%`;
         document.getElementById('st-uptime').innerText = formatUptime(data.system.uptime_sec);
 
@@ -1596,6 +1605,65 @@
       } catch (e) {
         showToast("Failed to disconnect.", true);
       }
+    }
+
+    async function confirmReboot() {
+      const msg = currentLang === 'en'
+        ? "Are you sure you want to reboot the FiberHome HG680-FJ STB?\nAll active Wi-Fi and network connections will temporarily disconnect."
+        : "Apakah Anda yakin ingin memulai ulang (reboot) STB FiberHome HG680-FJ?\nSemua koneksi Wi-Fi dan jaringan akan terputus sementara.";
+      if (!confirm(msg)) return;
+
+      const modal = document.getElementById('reboot-modal');
+      const timerEl = document.getElementById('reboot-timer');
+      const progressEl = document.getElementById('reboot-progress-bar');
+      const titleEl = document.getElementById('reboot-title');
+      const descEl = document.getElementById('reboot-desc');
+
+      if (modal) modal.style.display = 'flex';
+      if (titleEl) titleEl.innerText = currentLang === 'en' ? 'Rebooting STB...' : 'Memulai Ulang STB...';
+      if (descEl) descEl.innerText = currentLang === 'en'
+        ? 'The FiberHome HG680-FJ is rebooting. Reconnecting automatically when services are up.'
+        : 'STB FiberHome HG680-FJ sedang mulai ulang. Halaman akan terhubung kembali otomatis saat sistem siap.';
+
+      try {
+        await fetch('/api/system/reboot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+      } catch (e) {
+        console.log("Reboot triggered:", e);
+      }
+
+      let remaining = 45;
+      const total = 45;
+      if (timerEl) timerEl.innerText = remaining + 's';
+      if (progressEl) progressEl.style.width = '100%';
+
+      const interval = setInterval(() => {
+        remaining -= 1;
+        if (timerEl) timerEl.innerText = remaining + 's';
+        if (progressEl) {
+          const pct = Math.max(0, Math.round((remaining / total) * 100));
+          progressEl.style.width = pct + '%';
+        }
+
+        if (remaining <= 15) {
+          // Attempt pinging /api/status to reconnect early if STB booted fast
+          fetch('/api/status', { method: 'GET', signal: AbortSignal.timeout(2000) })
+            .then(res => {
+              if (res.ok) {
+                clearInterval(interval);
+                location.reload();
+              }
+            })
+            .catch(() => {});
+        }
+
+        if (remaining <= 0) {
+          clearInterval(interval);
+          location.reload();
+        }
+      }, 1000);
     }
 
     // Initialize UI
