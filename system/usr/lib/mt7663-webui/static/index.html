@@ -219,6 +219,7 @@
           <div class="stat-row"><span class="stat-label">Kernel:</span><span id="st-kernel" class="stat-val">-</span></div>
           <div class="stat-row"><span class="stat-label" id="t-lbl-temp">SOC Temp:</span><span id="st-temp" class="stat-val">-</span></div>
           <div class="stat-row"><span class="stat-label">CPU Load:</span><span id="st-load" class="stat-val">-</span></div>
+          <div class="stat-row"><span class="stat-label" id="t-lbl-conntrack">Koneksi Aktif:</span><span id="st-conntrack" class="stat-val">-</span></div>
           <div class="stat-row"><span class="stat-label" id="t-lbl-ram-usage">RAM Usage:</span><span id="st-ram-mb" class="stat-val">-</span></div>
           <div class="stat-row"><span class="stat-label" id="t-lbl-ram-pct">RAM %:</span><span id="st-ram-pct" class="stat-val">-</span></div>
           <div class="stat-row"><span class="stat-label">Uptime:</span><span id="st-uptime" class="stat-val">-</span></div>
@@ -544,6 +545,7 @@
         lblInetAccess: 'Internet Access:',
         lblNatMode: 'Share Mode:',
         lblTemp: 'SOC Temp:',
+        lblConntrack: 'Active Conns:',
         lblRamUsage: 'RAM Usage:',
         lblRamPct: 'RAM %:',
         tableClientsTitle: 'Connected Devices',
@@ -655,6 +657,7 @@
         lblInetAccess: 'Akses Internet:',
         lblNatMode: 'Mode Bagikan:',
         lblTemp: 'Suhu SOC:',
+        lblConntrack: 'Koneksi Aktif:',
         lblRamUsage: 'Penggunaan RAM:',
         lblRamPct: 'Persentase RAM:',
         tableClientsTitle: 'Perangkat Terhubung',
@@ -779,6 +782,8 @@
       document.getElementById('t-lbl-inet-access').innerText = t.lblInetAccess;
       document.getElementById('t-lbl-nat-mode').innerText = t.lblNatMode;
       document.getElementById('t-lbl-temp').innerText = t.lblTemp;
+      const elConntrack = document.getElementById('t-lbl-conntrack');
+      if (elConntrack) elConntrack.innerText = t.lblConntrack;
       document.getElementById('t-lbl-ram-usage').innerText = t.lblRamUsage;
       document.getElementById('t-lbl-ram-pct').innerText = t.lblRamPct;
 
@@ -1159,6 +1164,9 @@
         document.getElementById('st-kernel').innerText = data.system.kernel;
         document.getElementById('st-temp').innerText = data.system.temperature_c ? (data.system.temperature_c + ' °C') : 'N/A';
         document.getElementById('st-load').innerText = data.system.loadavg.join(', ');
+        if (document.getElementById('st-conntrack')) {
+          document.getElementById('st-conntrack').innerText = (data.system.conntrack_max ? `${data.system.conntrack_count} / ${data.system.conntrack_max.toLocaleString()} (${data.system.conntrack_percent}%)` : '-');
+        }
         
         // RAM usage in 2 clean lines as requested
         document.getElementById('st-ram-mb').innerText = `${data.system.ram_used_mb} MB / ${data.system.ram_total_mb} MB`;

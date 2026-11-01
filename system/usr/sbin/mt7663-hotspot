@@ -125,17 +125,32 @@ start_hotspot() {
     if [ -f "$DNSMASQ_PID" ] && kill -0 "$(cat "$DNSMASQ_PID")" 2>/dev/null; then
         kill "$(cat "$DNSMASQ_PID")" 2>/dev/null || true
     fi
-    # Format DHCP DNS option (e.g. --dhcp-option=6,1.1.1.1,8.8.8.8)
     DHCP_SEQ_ARG=""
     if [ "${DHCP_ALLOCATION:-sequential}" = "sequential" ]; then
         DHCP_SEQ_ARG="--dhcp-sequential-ip"
     fi
-    dnsmasq -C /dev/null -p 0 -i "$AP_IF" --bind-interfaces \
+
+    # Format upstream servers for Turbo DNS parallel resolver
+    DNS_UPSTREAM_ARGS=""
+    IFS=',' read -ra DNS_ADDRS <<< "${DNS_SERVERS:-1.1.1.1,8.8.8.8}"
+    for srv in "${DNS_ADDRS[@]}"; do
+        srv=$(echo "$srv" | tr -d ' ')
+        [ -n "$srv" ] && DNS_UPSTREAM_ARGS="$DNS_UPSTREAM_ARGS --server=$srv"
+    done
+
+    # Start dnsmasq with isolated bind (anti-conflict), 10,000-entry Turbo RAM cache, and parallel upstream query
+    dnsmasq -C /dev/null -i "$AP_IF" --bind-interfaces --listen-address="${AP_GATEWAY}" \
         $DHCP_SEQ_ARG \
         --dhcp-range="${DHCP_RANGE}" \
         --dhcp-option=3,"${AP_GATEWAY}" \
-        --dhcp-option=6,${DNS_SERVERS} \
+        --dhcp-option=6,"${AP_GATEWAY}" \
         --dhcp-option=26,"${AP_MTU}" \
+        --cache-size=10000 \
+        --all-servers \
+        --domain-needed \
+        --bogus-priv \
+        --no-resolv \
+        $DNS_UPSTREAM_ARGS \
         --pid-file="$DNSMASQ_PID"
 
     if [ -f "$HOSTAPD_PID" ] && kill -0 "$(cat "$HOSTAPD_PID")" 2>/dev/null; then

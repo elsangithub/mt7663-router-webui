@@ -24,6 +24,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Multi-Core Network Packet Steering (RPS & XPS)**:
   - Added automatic Receive Packet Steering (RPS) and Transmit Packet Steering (XPS) on interfaces `ap0` (Wi-Fi) and `eth0` (Ethernet WAN) targeting Cores 1, 2, and 3 (`rps_cpus = e`, `xps_cpus = e`), with `rps_flow_cnt = 4096` and `net.core.rps_sock_flow_entries = 32768`.
   - Load-balances incoming and outgoing packet routing symmetrically across all CPU cores, eliminating single-core bottlenecks on CPU 0.
+- **Turbo DNS Cache (10,000 Entries) & Parallel Upstream Resolver**:
+  - Activated local high-speed DNS proxy in `dnsmasq` with 10,000 RAM cache entries, sub-millisecond local response times, and `--all-servers` parallel querying across Cloudflare (1.1.1.1) and Google (8.8.8.8).
+  - Isolated listener socket (`-i ap0 --bind-interfaces --listen-address="${AP_GATEWAY}"`) ensuring zero port 53 conflicts with host OS resolvers (e.g., `systemd-resolved` on `127.0.0.53`).
+- **Google TCP BBR Congestion Control & FQ Queuing**:
+  - Enabled kernel `bbr` TCP congestion control and `fq` pacing queue discipline via `/etc/sysctl.d/99-mt7663.conf`, minimizing packet latency and bufferbloat under full bandwidth saturation.
+- **Conntrack Fast-Reap & Active Connections Telemetry**:
+  - Accelerated kernel TCP dead connection cleanup (`time_wait = 30s`, `close_wait = 15s`, `fin_wait = 30s`) to prevent NAT connection table exhaustion.
+  - Added live **Active Connections** (`Koneksi Aktif`) telemetry row in Card 4 (STB Status) displaying real-time connection count, maximum capacity (65,535), and utilization percentage.
 - **CPU Governor Sweet Spot Tuning (Cooler Baseline & Low Jitter)**:
   - Tuned `ondemand` governor parameters (`sampling_rate=20000` / 20ms, `up_threshold=60`, `sampling_down_factor=2`, `io_is_busy=0`).
   - Allows CPU to rest stably at 1000 MHz (1.0 GHz) during idle to lower operating temperatures, while instantly bursting to 2.0 GHz within 0.02s during gaming or heavy network bursts.

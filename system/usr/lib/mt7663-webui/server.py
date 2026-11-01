@@ -187,6 +187,21 @@ def get_system_metrics():
             except Exception:
                 pass
 
+    # Conntrack metrics (Request table capacity & usage)
+    conntrack_count = 0
+    conntrack_max = 65535
+    try:
+        with open("/proc/sys/net/netfilter/nf_conntrack_count", "r") as f:
+            conntrack_count = int(f.read().strip())
+    except Exception:
+        pass
+    try:
+        with open("/proc/sys/net/netfilter/nf_conntrack_max", "r") as f:
+            conntrack_max = int(f.read().strip())
+    except Exception:
+        pass
+    conntrack_pct = round((conntrack_count / conntrack_max * 100), 1) if conntrack_max > 0 else 0.0
+
     return {
         "hostname": platform.node(),
         "kernel": platform.release(),
@@ -195,7 +210,10 @@ def get_system_metrics():
         "ram_total_mb": round(ram_total / (1024 * 1024), 1),
         "ram_used_mb": round(ram_used / (1024 * 1024), 1),
         "ram_percent": ram_percent,
-        "temperature_c": temp_c
+        "temperature_c": temp_c,
+        "conntrack_count": conntrack_count,
+        "conntrack_max": conntrack_max,
+        "conntrack_percent": conntrack_pct
     }
 
 def read_hostapd_config():
