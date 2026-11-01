@@ -205,6 +205,7 @@
           <div class="stat-row"><span class="stat-label" id="t-lbl-main-gw">Main Gateway:</span><span id="st-upstream-gw" class="stat-val">-</span></div>
           <div class="stat-row"><span class="stat-label" id="t-lbl-inet-access">Internet Access:</span><span id="st-upstream-status" class="stat-val">Online</span></div>
           <div class="stat-row"><span class="stat-label" id="t-lbl-nat-mode">Share Mode:</span><span class="stat-val">NAT Masquerade</span></div>
+          <div class="stat-row"><span class="stat-label" id="t-lbl-conntrack">Sesi NAT Aktif:</span><span id="st-conntrack" class="stat-val">-</span></div>
         </div>
 
         <!-- Card 4: System STB -->
@@ -219,7 +220,6 @@
           <div class="stat-row"><span class="stat-label">Kernel:</span><span id="st-kernel" class="stat-val">-</span></div>
           <div class="stat-row"><span class="stat-label" id="t-lbl-temp">SOC Temp:</span><span id="st-temp" class="stat-val">-</span></div>
           <div class="stat-row"><span class="stat-label">CPU Load:</span><span id="st-load" class="stat-val">-</span></div>
-          <div class="stat-row"><span class="stat-label" id="t-lbl-conntrack">Koneksi Aktif:</span><span id="st-conntrack" class="stat-val">-</span></div>
           <div class="stat-row"><span class="stat-label" id="t-lbl-ram-usage">RAM Usage:</span><span id="st-ram-mb" class="stat-val">-</span></div>
           <div class="stat-row"><span class="stat-label" id="t-lbl-ram-pct">RAM %:</span><span id="st-ram-pct" class="stat-val">-</span></div>
           <div class="stat-row"><span class="stat-label">Uptime:</span><span id="st-uptime" class="stat-val">-</span></div>
@@ -545,7 +545,7 @@
         lblInetAccess: 'Internet Access:',
         lblNatMode: 'Share Mode:',
         lblTemp: 'SOC Temp:',
-        lblConntrack: 'Active Conns:',
+        lblConntrack: 'Active NAT Sessions:',
         lblRamUsage: 'RAM Usage:',
         lblRamPct: 'RAM %:',
         tableClientsTitle: 'Connected Devices',
@@ -656,8 +656,8 @@
         lblMainGw: 'Gateway Utama:',
         lblInetAccess: 'Akses Internet:',
         lblNatMode: 'Mode Bagikan:',
+        lblConntrack: 'Sesi NAT Aktif:',
         lblTemp: 'Suhu SOC:',
-        lblConntrack: 'Koneksi Aktif:',
         lblRamUsage: 'Penggunaan RAM:',
         lblRamPct: 'Persentase RAM:',
         tableClientsTitle: 'Perangkat Terhubung',
