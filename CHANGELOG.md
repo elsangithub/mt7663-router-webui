@@ -35,6 +35,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **CPU Governor Sweet Spot Tuning (Cooler Baseline & Low Jitter)**:
   - Tuned `ondemand` governor parameters (`sampling_rate=20000` / 20ms, `up_threshold=60`, `sampling_down_factor=2`, `io_is_busy=0`).
   - Allows CPU to rest stably at 1000 MHz (1.0 GHz) during idle to lower operating temperatures, while instantly bursting to 2.0 GHz within 0.02s during gaming or heavy network bursts.
+- **Real-Time CPU Clock Frequency Telemetry**:
+  - Replaced raw RAM megabytes in Card 4 with active live CPU clock frequency (`X.XX GHz`), providing immediate visibility into dynamic CPU governor scaling between 1.0 GHz idle and 1.9–2.0 GHz burst.
+- **Automated Ophub Governor Persistence (`postinst` / `postrm`)**:
+  - Integrated automated injection of `ondemand` sweet-spot parameters (`sampling_rate=20ms`, `up_threshold=60%`) directly into `/etc/custom_service/start_service.sh` during `.deb` package installation (`postinst`), with clean teardown on package removal (`postrm`). Guarantees cool ~50°C baseline temperatures across reboots on any Ophub Armbian build.
+
+### Changed
+- **Symmetrical Dashboard Card Balancing**:
+  - Relocated the **Active NAT Sessions / Connections** telemetry row from Card 4 (Hotspot) to Card 3 (Internet WAN), balancing both Card 3 and Card 4 symmetrically with exactly 6 informative rows each.
 
 ### Fixed
 - **Station Disconnect & OFFLINE Status Accuracy**:
@@ -45,6 +53,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Device Deletion & DHCP Release Reliability**:
   - Updated `/api/devices/delete` (🗑️ button) to remove MAC mappings from `mt7663-devices.json`, purge matching lease entries from `/var/lib/misc/dnsmasq.leases`, and flush kernel ARP cache (`ip neigh flush dev ap0`), removing the device instantly and permanently.
   - Revamped `/api/dhcp/release` (`♻️ Release DHCP`) to truncate lease files, flush ARP, terminate running `dnsmasq`, and cleanly spawn a fresh instance so in-memory DHCP cache is completely wiped.
+- **Frontend Action Handlers & Settings Round-Trip**:
+  - Implemented missing client-side JavaScript functions `flushDhcpLeases()` and `deleteDevice()` in `index.html` to ensure action buttons execute smoothly without DOM errors.
+  - Included `dhcp_lease` duration and `dhcp_alloc` distribution method in settings save payload, ensuring full configuration round-trip synchronization between frontend and backend.
+- **Authoritative DHCP Service Flag (`--dhcp-authoritative`)**:
+  - Added `--dhcp-authoritative` to `dnsmasq` invocation in `/usr/sbin/mt7663-hotspot` to immediately reject foreign DHCP lease requests from mobile devices reconnecting after network restarts, forcing instant clean IP re-allocation.
 - **Authentication Handshake Fix in Management Endpoints**:
   - Replaced undefined `check_auth()` calls in `/api/devices/rename`, `/api/devices/delete`, and `/api/dhcp/release` with proper `is_authenticated()` session checks, resolving HTTP 500 Internal Server Errors when modifying devices or releasing DHCP.
 
