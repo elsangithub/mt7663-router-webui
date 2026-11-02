@@ -22,8 +22,8 @@ sys.path.insert(0, str(BASE_DIR))
 
 try:
     from bottle import Bottle, request, response, static_file, ServerAdapter
-except ImportError:
-    print("[ERROR] bottle.py not found in", BASE_DIR)
+except ImportError as e:
+    print(f"[ERROR] Failed importing bottle in {BASE_DIR}: {e}", file=sys.stderr)
     sys.exit(1)
 
 from wsgiref.simple_server import WSGIServer, make_server

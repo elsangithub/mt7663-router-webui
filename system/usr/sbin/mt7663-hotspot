@@ -45,8 +45,19 @@ start_hotspot() {
         exit 1
     fi
 
+    # Ensure driver is loaded and give hardware time to initialize ap0
+    modprobe wlan_mt7663_sdio 2>/dev/null || true
+    local waited=0
+    while [ $waited -lt 15 ]; do
+        if ip link show "$AP_IF" >/dev/null 2>&1; then
+            break
+        fi
+        sleep 1
+        waited=$((waited + 1))
+    done
+
     if ! ip link show "$AP_IF" >/dev/null 2>&1; then
-        echo "[ERROR] Interface $AP_IF does not exist. Ensure wlan_mt7663_sdio module is loaded." >&2
+        echo "[ERROR] Interface $AP_IF does not exist after ${waited}s wait. Ensure wlan_mt7663_sdio module is loaded." >&2
         exit 1
     fi
 
@@ -139,7 +150,7 @@ start_hotspot() {
     done
 
     # Start dnsmasq with isolated bind (anti-conflict), authoritative mode, 10,000-entry Turbo RAM cache, and parallel upstream query
-    dnsmasq -C /dev/null -i "$AP_IF" --bind-interfaces --listen-address="${AP_GATEWAY}" \
+    dnsmasq -C /dev/null -u root -i "$AP_IF" --bind-interfaces --listen-address="${AP_GATEWAY}" \
         --dhcp-authoritative \
         $DHCP_SEQ_ARG \
         --dhcp-range="${DHCP_RANGE}" \

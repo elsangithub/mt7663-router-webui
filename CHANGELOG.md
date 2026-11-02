@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.4] - 2026-11-03
+
+### Fixed
+- **Python 3.13 / Debian 13 (Trixie) Compatibility**:
+  - Upgraded embedded WSGI micro-framework `bottle.py` from v0.12.25 to **v0.13.2**.
+  - Resolves fatal `ModuleNotFoundError: No module named 'cgi'` caused by the PEP 594 removal of the deprecated `cgi` module in Python 3.13.
+  - Improved `server.py` import error handling to output the explicit Python exception details.
+- **Hotspot Daemon Hardening & SDIO Boot Enumeration**:
+  - Added `-u root` parameter to `dnsmasq` invocation in `/usr/sbin/mt7663-hotspot` to prevent privilege drop and permission denied failures across varied base distributions.
+  - Added driver auto-load (`modprobe wlan_mt7663_sdio`) and a 15-second interface detection loop in `start_hotspot()` to eliminate boot race conditions while SDIO hardware initializes.
+
+---
+
 ## [1.0.3] - 2026-11-01
 
 ### Added
