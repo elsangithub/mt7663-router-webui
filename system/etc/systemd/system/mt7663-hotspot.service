@@ -8,7 +8,7 @@ Type=forking
 PIDFile=/run/mt7663-hostapd.pid
 Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 ExecStartPre=-/usr/sbin/rfkill unblock all
-ExecStartPre=-/usr/sbin/iw reg set US
+ExecStartPre=-/usr/sbin/iw reg set ID
 ExecStartPre=-/sbin/modprobe wlan_mt7663_sdio ap_mode=1
 ExecStart=/usr/sbin/mt7663-hotspot start
 ExecStop=/usr/sbin/mt7663-hotspot stop

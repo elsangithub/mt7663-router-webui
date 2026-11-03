@@ -38,10 +38,10 @@ fi
 start_hotspot() {
     echo "Starting MT7663 SoftAP Hotspot on interface $AP_IF..."
     
-    # Unblock any hardware/software RF-kill state and enforce US regulatory domain (unlocks 5 GHz ch 36-48)
+    # Unblock any hardware/software RF-kill state and enforce ID regulatory domain (matches driver wifi_mt7661.cfg)
     rfkill unblock wifi 2>/dev/null || true
     rfkill unblock all 2>/dev/null || true
-    iw reg set US 2>/dev/null || true
+    iw reg set ID 2>/dev/null || true
 
     # Clean any stale daemon instances and sockets BEFORE starting
     if [ -f "$HOSTAPD_PID" ] && kill -0 "$(cat "$HOSTAPD_PID")" 2>/dev/null; then
