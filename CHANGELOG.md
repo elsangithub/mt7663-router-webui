@@ -7,39 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.0.6] - 2026-11-03
-
-### Fixed
-- **Regulatory Domain & 5 GHz Unlocking (`hostapd-mt7663.conf`)**:
-  - Added `country_code=US` and `ieee80211d=1` to default `hostapd-mt7663.conf`. In default `00: DFS-UNSET` regulatory domain, Linux kernel cfg80211 rejects 5GHz channels (ch 36 / 5180 MHz) as NO-IR, causing hostapd to crash at boot.
-  - Added `ExecStartPre=-/usr/sbin/iw reg set US` in `mt7663-hotspot.service`.
-- **Pre-daemon Socket & Process Cleanup**:
-  - Moved stale process termination (`hostapd`, `dnsmasq`) and socket deletion to the very start of `start_hotspot()`, fixing race condition where dnsmasq was killed immediately after starting.
-- **Dynamic Interface Fallback**:
-  - Added auto-fallback from `ap0` to `wlan0` in `/usr/sbin/mt7663-hotspot` to guarantee hotspot launch even if virtual interface is delayed.
-- **Enhanced Diagnostic Logging**:
-  - Print trailing 25 lines of `/var/log/hostapd.log` directly to stderr if hostapd fails to write PID within 6 seconds.
-
----
-
-## [1.0.5] - 2026-11-03
-
-### Fixed
-- **Standalone Boot & RF-Kill Unblocking (`mt7663-hotspot`)**:
-  - Added `export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"` at the beginning of `/usr/sbin/mt7663-hotspot` to guarantee binaries (`hostapd`, `dnsmasq`, `rfkill`) are resolved when invoked under minimal systemd execution environments.
-  - Added automated `rfkill unblock wifi` and `rfkill unblock all` to prevent soft-blocked radio state during cold boot.
-  - Cleaned stale hostapd control sockets (`/var/run/hostapd/$AP_IF`) and PID files prior to daemon startup.
-  - Replaced rigid 1-second hostapd check with a 6-second polling loop to tolerate cold boot SDIO I/O jitter.
-- **Systemd Unit Decoupling (`mt7663-hotspot.service`)**:
-  - Removed obsolete device dependency `sys-subsystem-net-devices-ap0.device` from `After=` to allow reliable standalone boot when no LAN cable is connected.
-  - Added `ExecStartPre=-/usr/sbin/rfkill unblock all` and `ExecStartPre=-/sbin/modprobe wlan_mt7663_sdio ap_mode=1`.
-  - Added `TimeoutStartSec=30`.
-
----
-
 ## [1.0.4] - 2026-11-03
 
 ### Fixed
+- **Regulatory Domain Synchronization (`hostapd-mt7663.conf`)**:
+  - Synchronized regulatory domain to `country_code=ID` and `ieee80211d=1` matching driver `wifi_mt7661.cfg` (`Country ID`), unlocking 5 GHz channels (ch 36 / 5180 MHz).
+  - Added `ExecStartPre=-/usr/sbin/iw reg set ID` in `mt7663-hotspot.service`.
+- **Pre-daemon Clean Startup & Dynamic Fallback (`mt7663-hotspot`)**:
+  - Moved stale process termination (`hostapd`, `dnsmasq`) and socket deletion to the start of `start_hotspot()`.
+  - Added auto-fallback from `ap0` to primary interface `wlan0` to ensure hotspot availability.
+  - Added `export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"` and automated `rfkill unblock all`.
+  - Replaced rigid 1-second check with a 6-second hostapd PID polling loop and stderr log diagnostics.
+- **Systemd Unit Decoupling (`mt7663-hotspot.service`)**:
+  - Removed obsolete device dependency `sys-subsystem-net-devices-ap0.device` from `After=` to allow reliable standalone boot without LAN.
+  - Added module pre-load `ExecStartPre=-/sbin/modprobe wlan_mt7663_sdio ap_mode=1`.
 - **Python 3.13 / Debian 13 (Trixie) Compatibility**:
   - Upgraded embedded WSGI micro-framework `bottle.py` from v0.12.25 to **v0.13.2**.
   - Resolves fatal `ModuleNotFoundError: No module named 'cgi'` caused by the PEP 594 removal of the deprecated `cgi` module in Python 3.13.
