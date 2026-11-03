@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.5] - 2026-11-03
+
+### Fixed
+- **Standalone Boot & RF-Kill Unblocking (`mt7663-hotspot`)**:
+  - Added `export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"` at the beginning of `/usr/sbin/mt7663-hotspot` to guarantee binaries (`hostapd`, `dnsmasq`, `rfkill`) are resolved when invoked under minimal systemd execution environments.
+  - Added automated `rfkill unblock wifi` and `rfkill unblock all` to prevent soft-blocked radio state during cold boot.
+  - Cleaned stale hostapd control sockets (`/var/run/hostapd/$AP_IF`) and PID files prior to daemon startup.
+  - Replaced rigid 1-second hostapd check with a 6-second polling loop to tolerate cold boot SDIO I/O jitter.
+- **Systemd Unit Decoupling (`mt7663-hotspot.service`)**:
+  - Removed obsolete device dependency `sys-subsystem-net-devices-ap0.device` from `After=` to allow reliable standalone boot when no LAN cable is connected.
+  - Added `ExecStartPre=-/usr/sbin/rfkill unblock all` and `ExecStartPre=-/sbin/modprobe wlan_mt7663_sdio ap_mode=1`.
+  - Added `TimeoutStartSec=30`.
+
+---
+
 ## [1.0.4] - 2026-11-03
 
 ### Fixed
