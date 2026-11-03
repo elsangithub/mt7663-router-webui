@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.6] - 2026-11-03
+
+### Fixed
+- **Regulatory Domain & 5 GHz Unlocking (`hostapd-mt7663.conf`)**:
+  - Added `country_code=US` and `ieee80211d=1` to default `hostapd-mt7663.conf`. In default `00: DFS-UNSET` regulatory domain, Linux kernel cfg80211 rejects 5GHz channels (ch 36 / 5180 MHz) as NO-IR, causing hostapd to crash at boot.
+  - Added `ExecStartPre=-/usr/sbin/iw reg set US` in `mt7663-hotspot.service`.
+- **Pre-daemon Socket & Process Cleanup**:
+  - Moved stale process termination (`hostapd`, `dnsmasq`) and socket deletion to the very start of `start_hotspot()`, fixing race condition where dnsmasq was killed immediately after starting.
+- **Dynamic Interface Fallback**:
+  - Added auto-fallback from `ap0` to `wlan0` in `/usr/sbin/mt7663-hotspot` to guarantee hotspot launch even if virtual interface is delayed.
+- **Enhanced Diagnostic Logging**:
+  - Print trailing 25 lines of `/var/log/hostapd.log` directly to stderr if hostapd fails to write PID within 6 seconds.
+
+---
+
 ## [1.0.5] - 2026-11-03
 
 ### Fixed

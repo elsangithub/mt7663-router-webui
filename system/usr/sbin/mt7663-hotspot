@@ -38,9 +38,23 @@ fi
 start_hotspot() {
     echo "Starting MT7663 SoftAP Hotspot on interface $AP_IF..."
     
-    # Unblock any hardware/software RF-kill state
+    # Unblock any hardware/software RF-kill state and enforce US regulatory domain (unlocks 5 GHz ch 36-48)
     rfkill unblock wifi 2>/dev/null || true
     rfkill unblock all 2>/dev/null || true
+    iw reg set US 2>/dev/null || true
+
+    # Clean any stale daemon instances and sockets BEFORE starting
+    if [ -f "$HOSTAPD_PID" ] && kill -0 "$(cat "$HOSTAPD_PID")" 2>/dev/null; then
+        kill "$(cat "$HOSTAPD_PID")" 2>/dev/null || true
+    fi
+    if [ -f "$DNSMASQ_PID" ] && kill -0 "$(cat "$DNSMASQ_PID")" 2>/dev/null; then
+        kill "$(cat "$DNSMASQ_PID")" 2>/dev/null || true
+    fi
+    pkill -f "dnsmasq.*$AP_IF" 2>/dev/null || true
+    killall hostapd 2>/dev/null || true
+    rm -f /var/run/hostapd/"$AP_IF" /var/run/hostapd/wlan0 "$HOSTAPD_PID" "$DNSMASQ_PID" 2>/dev/null || true
+    mkdir -p /var/run/hostapd
+    chmod 755 /var/run/hostapd 2>/dev/null || true
 
     if ! command -v hostapd >/dev/null 2>&1; then
         echo "[ERROR] hostapd not found in PATH ($PATH)." >&2
@@ -62,14 +76,18 @@ start_hotspot() {
         waited=$((waited + 1))
     done
 
+    # Fallback to wlan0 if virtual ap0 interface is not instantiated by driver
     if ! ip link show "$AP_IF" >/dev/null 2>&1; then
-        echo "[ERROR] Interface $AP_IF does not exist after ${waited}s wait. Ensure wlan_mt7663_sdio module is loaded." >&2
-        exit 1
+        if ip link show "wlan0" >/dev/null 2>&1; then
+            echo "[WARN] Interface $AP_IF not found after ${waited}s, falling back to primary interface wlan0..."
+            AP_IF="wlan0"
+            sed -i "s/^interface=.*/interface=wlan0/" "$HOSTAPD_CONF"
+        else
+            echo "[ERROR] Neither $AP_IF nor wlan0 found after ${waited}s wait. Ensure wlan_mt7663_sdio module is loaded." >&2
+            exit 1
+        fi
     fi
 
-    mkdir -p /var/run/hostapd
-    chmod 755 /var/run/hostapd 2>/dev/null || true
-    rm -f /var/run/hostapd/"$AP_IF" "$HOSTAPD_PID" "$DNSMASQ_PID" 2>/dev/null || true
     ip addr flush dev "$AP_IF" 2>/dev/null || true
     ip addr add "${AP_GATEWAY}/${AP_CIDR}" dev "$AP_IF" 2>/dev/null || true
     ip link set "$AP_IF" mtu "$AP_MTU" 2>/dev/null || true
@@ -172,14 +190,7 @@ start_hotspot() {
         $DNS_UPSTREAM_ARGS \
         --pid-file="$DNSMASQ_PID"
 
-    # Clean old hostapd and dnsmasq instances if any
-    if [ -f "$HOSTAPD_PID" ] && kill -0 "$(cat "$HOSTAPD_PID")" 2>/dev/null; then
-        kill "$(cat "$HOSTAPD_PID")" 2>/dev/null || true
-    fi
-    pkill -f "dnsmasq.*$AP_IF" 2>/dev/null || true
-    killall hostapd 2>/dev/null || true
-    sleep 0.5
-
+    # Start hostapd in background and log to /var/log/hostapd.log
     hostapd -B -P "$HOSTAPD_PID" -f /var/log/hostapd.log "$HOSTAPD_CONF"
     
     # Wait up to 6 seconds for hostapd to initialize and write its PID
@@ -195,7 +206,8 @@ start_hotspot() {
     if [ -f "$HOSTAPD_PID" ] && kill -0 "$(cat "$HOSTAPD_PID")" 2>/dev/null; then
         echo "[SUCCESS] MT7663 Hotspot is active on $AP_IF (Gateway: ${AP_GATEWAY}/${AP_CIDR}, DNS: ${DNS_SERVERS})"
     else
-        echo "[ERROR] Failed to start hostapd after ${h_waited}s. Check /var/log/hostapd.log for details." >&2
+        echo "[ERROR] Failed to start hostapd after ${h_waited}s. Hostapd log:" >&2
+        tail -n 25 /var/log/hostapd.log >&2 2>/dev/null || true
         exit 1
     fi
 }
