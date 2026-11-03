@@ -2,7 +2,7 @@
 set -e
 
 PACKAGE=mt7663-router-webui
-VERSION=${1:-1.0.3}
+VERSION=${1:-1.0.5}
 TARGET_DEB="${PACKAGE}_${VERSION}_all.deb"
 BUILD_DIR=/tmp/${PACKAGE}_build
 

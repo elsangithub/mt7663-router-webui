@@ -2,6 +2,8 @@
 # MediaTek MT7663 SoftAP / Hotspot Management Utility
 # FiberHome HG680-FJ (Amlogic Meson G12A)
 
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
+
 DEFAULT_CONF="/etc/default/mt7663-hotspot"
 HOSTAPD_CONF="/etc/hostapd/hostapd-mt7663.conf"
 HOSTAPD_PID="/run/mt7663-hostapd.pid"
@@ -36,17 +38,21 @@ fi
 start_hotspot() {
     echo "Starting MT7663 SoftAP Hotspot on interface $AP_IF..."
     
+    # Unblock any hardware/software RF-kill state
+    rfkill unblock wifi 2>/dev/null || true
+    rfkill unblock all 2>/dev/null || true
+
     if ! command -v hostapd >/dev/null 2>&1; then
-        echo "[ERROR] hostapd not found. Please install via: apt install hostapd" >&2
+        echo "[ERROR] hostapd not found in PATH ($PATH)." >&2
         exit 1
     fi
     if ! command -v dnsmasq >/dev/null 2>&1; then
-        echo "[ERROR] dnsmasq not found. Please install via: apt install dnsmasq" >&2
+        echo "[ERROR] dnsmasq not found in PATH ($PATH)." >&2
         exit 1
     fi
 
-    # Ensure driver is loaded and give hardware time to initialize ap0
-    modprobe wlan_mt7663_sdio 2>/dev/null || true
+    # Ensure driver is loaded with ap_mode=1 and give hardware time to initialize ap0
+    modprobe wlan_mt7663_sdio ap_mode=1 2>/dev/null || modprobe wlan_mt7663_sdio 2>/dev/null || true
     local waited=0
     while [ $waited -lt 15 ]; do
         if ip link show "$AP_IF" >/dev/null 2>&1; then
@@ -63,10 +69,11 @@ start_hotspot() {
 
     mkdir -p /var/run/hostapd
     chmod 755 /var/run/hostapd 2>/dev/null || true
+    rm -f /var/run/hostapd/"$AP_IF" "$HOSTAPD_PID" "$DNSMASQ_PID" 2>/dev/null || true
     ip addr flush dev "$AP_IF" 2>/dev/null || true
-    ip addr add "${AP_GATEWAY}/${AP_CIDR}" dev "$AP_IF"
-    ip link set "$AP_IF" mtu "$AP_MTU"
-    ip link set "$AP_IF" up
+    ip addr add "${AP_GATEWAY}/${AP_CIDR}" dev "$AP_IF" 2>/dev/null || true
+    ip link set "$AP_IF" mtu "$AP_MTU" 2>/dev/null || true
+    ip link set "$AP_IF" up 2>/dev/null || true
 
     # Apply Low-Latency Gaming QoS (fq_codel bufferbloat mitigation)
     if command -v tc >/dev/null 2>&1; then
@@ -165,16 +172,30 @@ start_hotspot() {
         $DNS_UPSTREAM_ARGS \
         --pid-file="$DNSMASQ_PID"
 
+    # Clean old hostapd and dnsmasq instances if any
     if [ -f "$HOSTAPD_PID" ] && kill -0 "$(cat "$HOSTAPD_PID")" 2>/dev/null; then
         kill "$(cat "$HOSTAPD_PID")" 2>/dev/null || true
     fi
+    pkill -f "dnsmasq.*$AP_IF" 2>/dev/null || true
+    killall hostapd 2>/dev/null || true
+    sleep 0.5
+
     hostapd -B -P "$HOSTAPD_PID" -f /var/log/hostapd.log "$HOSTAPD_CONF"
     
-    sleep 1
+    # Wait up to 6 seconds for hostapd to initialize and write its PID
+    local h_waited=0
+    while [ $h_waited -lt 6 ]; do
+        if [ -f "$HOSTAPD_PID" ] && kill -0 "$(cat "$HOSTAPD_PID")" 2>/dev/null; then
+            break
+        fi
+        sleep 1
+        h_waited=$((h_waited + 1))
+    done
+
     if [ -f "$HOSTAPD_PID" ] && kill -0 "$(cat "$HOSTAPD_PID")" 2>/dev/null; then
         echo "[SUCCESS] MT7663 Hotspot is active on $AP_IF (Gateway: ${AP_GATEWAY}/${AP_CIDR}, DNS: ${DNS_SERVERS})"
     else
-        echo "[ERROR] Failed to start hostapd. Check /var/log/hostapd.log for details." >&2
+        echo "[ERROR] Failed to start hostapd after ${h_waited}s. Check /var/log/hostapd.log for details." >&2
         exit 1
     fi
 }
