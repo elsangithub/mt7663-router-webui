@@ -112,6 +112,12 @@ start_hotspot() {
     sysctl -q -w net.core.rps_sock_flow_entries=32768 2>/dev/null || true
 
     # Optimize CPU Governor sweet spot (cool thermal baseline at 1.0 GHz, instant burst to 2.0 GHz)
+    for g in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
+        echo ondemand > "$g" 2>/dev/null || true
+    done
+    for f in /sys/devices/system/cpu/cpu*/cpufreq/scaling_min_freq; do
+        echo 1000000 > "$f" 2>/dev/null || true
+    done
     for gov in /sys/devices/system/cpu/cpufreq/ondemand /sys/devices/system/cpu/cpu0/cpufreq/ondemand; do
         if [ -d "$gov" ]; then
             echo 20000 > "${gov}/sampling_rate" 2>/dev/null || true
