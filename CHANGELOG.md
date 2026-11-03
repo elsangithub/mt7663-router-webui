@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.0.4] - 2026-11-03
+## [1.0.5] - 2026-11-03
 
 ### Fixed
 - **Regulatory Domain Synchronization (`hostapd-mt7663.conf`)**:
@@ -21,6 +21,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Systemd Unit Decoupling (`mt7663-hotspot.service`)**:
   - Removed obsolete device dependency `sys-subsystem-net-devices-ap0.device` from `After=` to allow reliable standalone boot without LAN.
   - Added module pre-load `ExecStartPre=-/sbin/modprobe wlan_mt7663_sdio ap_mode=1`.
+
+---
+
+## [1.0.4] - 2026-11-03
+
+### Fixed
 - **Python 3.13 / Debian 13 (Trixie) Compatibility**:
   - Upgraded embedded WSGI micro-framework `bottle.py` from v0.12.25 to **v0.13.2**.
   - Resolves fatal `ModuleNotFoundError: No module named 'cgi'` caused by the PEP 594 removal of the deprecated `cgi` module in Python 3.13.
