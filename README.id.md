@@ -121,8 +121,8 @@ Chipset MT7663 mendukung protokol **802.11ac Wave 2 VHT80** (lebar pita 80 MHz).
 
 Sebelum memasang paket Web UI ini, pastikan paket driver murni DKMS telah terpasang:
 
-1. **Driver Kernel**: [`mt7663-dkms`](https://github.com/elsangithub/mt7663-driver) (versi **1.0.8** atau lebih baru).
-2. **Sistem Operasi**: Armbian Linux (`6.18.56-ophub` / basis Debian 12 Bookworm).
+1. **Driver Kernel**: [`mt7663-dkms`](https://github.com/elsangithub/mt7663-driver) (versi **1.0.11** atau lebih baru).
+2. **Sistem Operasi**: Armbian Linux (`6.18.59-ophub` / basis Debian 12/13).
 
 ---
 
@@ -130,11 +130,15 @@ Sebelum memasang paket Web UI ini, pastikan paket driver murni DKMS telah terpas
 
 ### 1. Pasang via Perintah APT
 
-Unduh paket `.deb` terbaru dan pasang menggunakan `apt` agar seluruh dependensi pendukung (`hostapd`, `dnsmasq`, `python3`, `iptables`, `wireless-tools`) diunduh dan dipasang secara otomatis:
+Unduh paket rilis `.deb` terbaru dan pasang menggunakan `apt` agar seluruh dependensi pendukung (`hostapd`, `dnsmasq`, `python3`, `iptables`, `wireless-tools`) diunduh dan dipasang secara otomatis:
 
 ```bash
+# Unduh paket rilis terbaru (v1.0.5)
+wget https://github.com/elsangithub/mt7663-router-webui/releases/download/v1.0.5/mt7663-router-webui_1.0.5_all.deb
+
+# Pasang paket dan selesaikan dependensi otomatis
 sudo apt update
-sudo apt install ./mt7663-router-webui_1.0.1_all.deb
+sudo apt install ./mt7663-router-webui_1.0.5_all.deb
 ```
 
 ### 2. Aktifkan Mode Dual AP/STA

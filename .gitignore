@@ -11,3 +11,6 @@ __pycache__/
 *.swo
 *~
 .DS_Store
+
+# Local technical and experimental logs
+EXPERIMENTAL_LOG.md

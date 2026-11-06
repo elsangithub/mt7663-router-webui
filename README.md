@@ -121,8 +121,8 @@ The MT7663 chip supports **802.11ac Wave 2 VHT80** (80 MHz bandwidth). Understan
 
 Before installing this package, ensure you have installed the pure DKMS driver:
 
-1. **Kernel Driver**: [`mt7663-dkms`](https://github.com/elsangithub/mt7663-driver) (version **1.0.8** or higher).
-2. **Operating System**: Armbian Linux (`6.18.56-ophub` / Debian 12 Bookworm base).
+1. **Kernel Driver**: [`mt7663-dkms`](https://github.com/elsangithub/mt7663-driver) (version **1.0.11** or higher).
+2. **Operating System**: Armbian Linux (`6.18.59-ophub` / Debian 12/13 base).
 
 ---
 
@@ -130,11 +130,15 @@ Before installing this package, ensure you have installed the pure DKMS driver:
 
 ### 1. Install via APT
 
-Download the latest `.deb` package and install it using `apt` so that all required runtime dependencies (`hostapd`, `dnsmasq`, `python3`, `iptables`, `wireless-tools`) are automatically resolved:
+Download the latest `.deb` release package and install it using `apt` so that all required runtime dependencies (`hostapd`, `dnsmasq`, `python3`, `iptables`, `wireless-tools`) are automatically resolved:
 
 ```bash
+# Download latest release package (v1.0.5)
+wget https://github.com/elsangithub/mt7663-router-webui/releases/download/v1.0.5/mt7663-router-webui_1.0.5_all.deb
+
+# Install and automatically resolve dependencies
 sudo apt update
-sudo apt install ./mt7663-router-webui_1.0.1_all.deb
+sudo apt install ./mt7663-router-webui_1.0.5_all.deb
 ```
 
 ### 2. Activate Dual AP/STA Mode

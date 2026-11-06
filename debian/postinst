@@ -48,9 +48,14 @@ fi
 if [ -d /run/systemd/system ]; then
     systemctl daemon-reload 2>/dev/null || true
     systemctl enable mt7663-hotspot.service 2>/dev/null || true
-    systemctl restart mt7663-hotspot.service 2>/dev/null || true
     systemctl enable mt7663-webui.service 2>/dev/null || true
     systemctl restart mt7663-webui.service 2>/dev/null || true
+
+    # Only restart hotspot service immediately if ap0 interface is already active in kernel;
+    # on fresh install prior to reboot, hotspot will initialize cleanly upon next boot.
+    if ip link show ap0 >/dev/null 2>&1; then
+        systemctl restart mt7663-hotspot.service 2>/dev/null || true
+    fi
 fi
 
 echo "mt7663-router-webui installed successfully! Web UI available at http://10.10.10.1:8080"

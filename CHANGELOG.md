@@ -7,15 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.0.5] - 2026-11-03
+## [1.0.5] - 2026-11-07
 
 ### Fixed
-- **Regulatory Domain Synchronization (`hostapd-mt7663.conf`)**:
-  - Synchronized regulatory domain to `country_code=ID` and `ieee80211d=1` matching driver `wifi_mt7661.cfg` (`Country ID`), unlocking 5 GHz channels (ch 36 / 5180 MHz).
-  - Added `ExecStartPre=-/usr/sbin/iw reg set ID` in `mt7663-hotspot.service`.
-- **Pre-daemon Clean Startup & Dynamic Fallback (`mt7663-hotspot`)**:
+- **Eliminated Kernel `rtnl_lock` Deadlock (`hostapd-mt7663.conf`, `mt7663-hotspot.service` & `mt7663-hotspot`)**:
+  - Removed `country_code=ID` and `ieee80211d=1` from `hostapd-mt7663.conf`. MediaTek MT7663 driver cannot handle userspace Netlink regulatory domain requests on modern Linux (6.18+), which previously locked `rtnl_lock` indefinitely in uninterruptible sleep (`D-state`) and froze network/console/SSH sequences.
+  - Removed redundant `iw reg set ID` commands from `mt7663-hotspot.service` and `/usr/sbin/mt7663-hotspot`.
+  - Regulatory domain is now cleanly handled by hardware NVRAM/EEPROM without userspace netlink interference.
+- **Eliminated Package Collision with `mt7663-dkms`**:
+  - Removed duplicate `/etc/NetworkManager/conf.d/99-mt7663-unmanaged-ap0.conf` from this package, resolving `dpkg: error: trying to overwrite ... which is also in package mt7663-dkms`.
+- **Non-Blocking Post-Installation (`debian/postinst`)**:
+  - Conditioned `systemctl restart mt7663-hotspot.service` during package installation to only execute if `ap0` is already present.
+  - On fresh installs prior to reboot, hotspot service is enabled for next boot while only `mt7663-webui.service` is started immediately, completely eliminating the 50-second freeze at 93% progress.
+- **Dedicated DBDC AP Isolation (`mt7663-hotspot`)**:
+  - Removed destructive `wlan0` fallback and config file mutation (`sed -i ... interface=wlan0`) in `/usr/sbin/mt7663-hotspot`.
+  - SoftAP strictly binds to `ap0`, preventing race conditions, IP flushing, and disconnections on active client interface `wlan0`.
+- **CPU Governor Sweet Spot Baseline (`mt7663-hotspot`)**:
+  - Explicitly enforced `ondemand` governor and 1.0 GHz minimum frequency (`scaling_min_freq = 1000000`) across all CPU cores prior to tuning sampling rate.
+- **Pre-daemon Clean Startup & Enhanced Diagnostics**:
   - Moved stale process termination (`hostapd`, `dnsmasq`) and socket deletion to the start of `start_hotspot()`.
-  - Added auto-fallback from `ap0` to primary interface `wlan0` to ensure hotspot availability.
   - Added `export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"` and automated `rfkill unblock all`.
   - Replaced rigid 1-second check with a 6-second hostapd PID polling loop and stderr log diagnostics.
 - **Systemd Unit Decoupling (`mt7663-hotspot.service`)**:
