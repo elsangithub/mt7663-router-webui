@@ -727,6 +727,18 @@ def get_wifi_chip_info():
                     return {"chip": "MT7668", "name": "MediaTek MT7668 (Dual-Band 2x2)", "module": "wlan_mt7668"}
                 elif "wlan_mt7663" in mods:
                     return {"chip": "MT7663", "name": "MediaTek MT7663 (Dual-Band 2x2)", "module": "wlan_mt7663_sdio"}
+        # Fallback: periksa ID hardware bus SDIO jika modul belum/sedang tidak terangkat
+        import glob
+        for dev_path in glob.glob("/sys/bus/sdio/devices/*/device"):
+            try:
+                with open(dev_path, "r") as df:
+                    dev_id = df.read().strip().lower()
+                    if dev_id in ["0x7608", "0x6602"]:
+                        return {"chip": "MT7668", "name": "MediaTek MT7668 (Dual-Band 2x2)", "module": "wlan_mt7668"}
+                    elif dev_id == "0x7663":
+                        return {"chip": "MT7663", "name": "MediaTek MT7663 (Dual-Band 2x2)", "module": "wlan_mt7663_sdio"}
+            except Exception:
+                pass
     except Exception:
         pass
     return {"chip": "MT766x", "name": "MediaTek Wi-Fi (ap0/wlan0)", "module": "unknown"}

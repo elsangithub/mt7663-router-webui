@@ -109,7 +109,7 @@
     <div class="modal">
       <div style="text-align: center; margin-bottom: 1.25rem;">
         <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🔒</div>
-        <h2 style="color: #fff; font-size: 1.25rem;" id="txt-login-title">MT7663 Router Login</h2>
+        <h2 style="color: #fff; font-size: 1.25rem;" id="txt-login-title">MediaTek Router Login</h2>
         <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;" id="txt-login-desc">Enter administrator password to access settings.</p>
       </div>
       <form id="login-form" onsubmit="submitLogin(event)">
@@ -179,6 +179,7 @@
           <div class="stat-row"><span class="stat-label" id="t-lbl-gateway">Gateway IP:</span><span id="st-hotspot-gw" class="stat-val">-</span></div>
           <div class="stat-row"><span class="stat-label">DNS Server:</span><span id="st-hotspot-dns" class="stat-val">-</span></div>
           <div class="stat-row"><span class="stat-label" id="t-lbl-clients">Connected Clients:</span><span id="st-hotspot-clients" class="stat-val">0</span></div>
+          <div class="stat-row"><span class="stat-label">Chipset:</span><span id="st-hotspot-chip" class="stat-val">-</span></div>
         </div>
 
         <!-- Card 2: Wi-Fi Client (wlan0) -->
@@ -523,7 +524,7 @@
         hotspot: '📡 5GHz Hotspot',
         client: '📶 Wi-Fi Client',
         admin: '⚙️ Admin',
-        loginTitle: 'MT7663 Router Login',
+        loginTitle: 'MediaTek Router Login',
         loginDesc: 'Enter administrator password to access settings.',
         loginSubmit: 'Login',
         loginHint: 'Default credentials: admin / admin',
@@ -635,7 +636,7 @@
         hotspot: '📡 Hotspot 5GHz',
         client: '📶 Klien Wi-Fi',
         admin: '⚙️ Admin',
-        loginTitle: 'Login Router MT7663',
+        loginTitle: 'Login Router MediaTek',
         loginDesc: 'Masukkan kata sandi administrator untuk mengakses setelan.',
         loginSubmit: 'Masuk (Login)',
         loginHint: 'Kredensial bawaan: admin / admin',
@@ -1137,6 +1138,8 @@
           const brandEl = document.querySelector('.brand-title');
           if (brandEl) brandEl.innerText = data.chip_info.chip + ' Router Manager';
           document.title = data.chip_info.chip + ' Router Manager';
+          const chipEl = document.getElementById('st-hotspot-chip');
+          if (chipEl && data.chip_info.name) chipEl.innerText = data.chip_info.name;
         }
         
         // 1. Hotspot Status
