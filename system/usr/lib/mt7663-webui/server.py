@@ -718,6 +718,19 @@ def api_auth_change_password():
         response.status = 500
         return {"status": "error", "message": f"Failed to save credentials: {e}"}
 
+def get_wifi_chip_info():
+    try:
+        if os.path.exists("/proc/modules"):
+            with open("/proc/modules", "r") as f:
+                mods = f.read()
+                if "wlan_mt7668" in mods:
+                    return {"chip": "MT7668", "name": "MediaTek MT7668 (Dual-Band 2x2)", "module": "wlan_mt7668"}
+                elif "wlan_mt7663" in mods:
+                    return {"chip": "MT7663", "name": "MediaTek MT7663 (Dual-Band 2x2)", "module": "wlan_mt7663_sdio"}
+    except Exception:
+        pass
+    return {"chip": "MT766x", "name": "MediaTek Wi-Fi (ap0/wlan0)", "module": "unknown"}
+
 # Main Status API
 @app.route('/api/status', method=['GET'])
 def api_status():
@@ -768,6 +781,7 @@ def api_status():
     return {
         "status": "ok",
         "system": sys_metrics,
+        "chip_info": get_wifi_chip_info(),
         "hotspot": {
             "active": hostapd_running and dnsmasq_running,
             "hostapd_running": hostapd_running,

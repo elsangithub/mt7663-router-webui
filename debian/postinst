@@ -19,7 +19,7 @@ sysctl -p /etc/sysctl.d/99-mt7663.conf 2>/dev/null || true
 
 # Ensure module configuration options are active
 if ! ip link show ap0 >/dev/null 2>&1; then
-    echo "[INFO] Module options installed in /etc/modprobe.d/wlan_mt7663_sdio.conf"
+    echo "[INFO] Module options installed in /etc/modprobe.d/ (wlan_mt7663_sdio.conf & wlan_mt7668.conf)"
     echo "[INFO] If ap0 interface does not appear immediately, please reboot (sudo reboot) to cleanly initialize dual AP/STA mode on SDIO hardware."
 fi
 

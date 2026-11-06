@@ -1131,6 +1131,13 @@
       try {
         const res = await fetch('/api/status');
         const data = await res.json();
+
+        // Dynamic Chipset Branding
+        if (data.chip_info && data.chip_info.chip) {
+          const brandEl = document.querySelector('.brand-title');
+          if (brandEl) brandEl.innerText = data.chip_info.chip + ' Router Manager';
+          document.title = data.chip_info.chip + ' Router Manager';
+        }
         
         // 1. Hotspot Status
         const hsBadge = document.getElementById('badge-hotspot');

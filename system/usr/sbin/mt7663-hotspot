@@ -64,8 +64,22 @@ start_hotspot() {
         exit 1
     fi
 
-    # Ensure driver is loaded with ap_mode=1 and give hardware time to initialize ap0
-    modprobe wlan_mt7663_sdio ap_mode=1 2>/dev/null || modprobe wlan_mt7663_sdio 2>/dev/null || true
+    # Hardware-aware driver loader (Zero overhead for absent chip)
+    if lsmod | grep -q "^wlan_mt7668"; then
+        : # Already active, do nothing
+    elif lsmod | grep -q "^wlan_mt7663"; then
+        : # Already active, do nothing
+    else
+        # Inspect physical SDIO hardware ID from sysfs
+        local sdio_ids
+        sdio_ids=$(cat /sys/bus/sdio/devices/*/device 2>/dev/null || true)
+        if echo "$sdio_ids" | grep -q -E "0x7608|0x6602"; then
+            modprobe wlan_mt7668 ap_mode=1 2>/dev/null || modprobe wlan_mt7668 2>/dev/null || true
+        elif echo "$sdio_ids" | grep -q "0x7663"; then
+            modprobe wlan_mt7663_sdio ap_mode=1 2>/dev/null || modprobe wlan_mt7663_sdio 2>/dev/null || true
+        fi
+    fi
+
     local waited=0
     while [ $waited -lt 15 ]; do
         if ip link show "$AP_IF" >/dev/null 2>&1; then
@@ -76,7 +90,7 @@ start_hotspot() {
     done
 
     if ! ip link show "$AP_IF" >/dev/null 2>&1; then
-        echo "[ERROR] Interface $AP_IF not found after ${waited}s wait. Please ensure wlan_mt7663_sdio is loaded with ap_mode=1 (sudo reboot)." >&2
+        echo "[ERROR] Interface $AP_IF not found after ${waited}s wait. Please ensure wlan_mt7663_sdio or wlan_mt7668 is loaded with ap_mode=1 (sudo reboot)." >&2
         exit 1
     fi
 

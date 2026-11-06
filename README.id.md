@@ -2,16 +2,16 @@
   <a href="README.md">English</a> | <b>Bahasa Indonesia</b>
 </p>
 
-# MT7663 Router Web UI & Turnkey SoftAP Hotspot (Panduan Bahasa Indonesia)
+# MT7663 / MT7668 Router Web UI & Turnkey SoftAP Hotspot (Panduan Bahasa Indonesia)
 
 [![Rilis](https://img.shields.io/github/v/release/elsangithub/mt7663-router-webui?color=blue&label=rilis)](https://github.com/elsangithub/mt7663-router-webui/releases)
 [![Build](https://img.shields.io/github/actions/workflow/status/elsangithub/mt7663-router-webui/release.yml?branch=main&label=build)](https://github.com/elsangithub/mt7663-router-webui/actions)
 [![Platform](https://img.shields.io/badge/Platform-FiberHome%20HG680--FJ%20(S905X2)-orange.svg)]()
 [![OS](https://img.shields.io/badge/OS-Armbian%20Linux%206.18%2B%20(Ophub)-blue.svg)]()
-[![Paket](https://img.shields.io/badge/Paket-Debian%2012%20(Bookworm)-red.svg)]()
+[![Paket](https://img.shields.io/badge/Paket-Debian%2012%2F13-red.svg)]()
 [![Lisensi: GPL-2.0](https://img.shields.io/badge/Lisensi-GPL_2.0-blue.svg)](LICENSE)
 
-Dashboard web manajemen router WSGI yang sangat ringan (tanpa dependensi berat) dan pengendali SoftAP hotspot terintegrasi khusus untuk modul Wi-Fi **MediaTek MT7663** SDIO pada STB **FiberHome HG680-FJ** (Amlogic S905X2 / Meson G12A) dengan sistem operasi Armbian Linux.
+Dashboard web manajemen router WSGI yang sangat ringan (tanpa dependensi berat) dan pengendali SoftAP hotspot terintegrasi untuk modul Wi-Fi **MediaTek MT7663** dan **MT7668** SDIO pada STB **FiberHome HG680-FJ** (Amlogic S905X2 / Meson G12A) dengan sistem operasi Armbian Linux.
 
 Paket ini mengubah STB Anda menjadi **Router Wi-Fi Mandiri & Wireless Repeater DBDC** dengan dukungan pergantian otomatis sumber WAN via **Kabel LAN (`eth0`)** maupun **Wi-Fi Klien (`wlan0`)**, tanpa membutuhkan dongle Wi-Fi USB tambahan.
 
@@ -119,9 +119,9 @@ Chipset MT7663 mendukung protokol **802.11ac Wave 2 VHT80** (lebar pita 80 MHz).
 
 ## 📋 Syarat Sistem
 
-Sebelum memasang paket Web UI ini, pastikan paket driver murni DKMS telah terpasang:
+Sebelum memasang paket Web UI ini, pastikan paket driver DKMS yang sesuai telah terpasang:
 
-1. **Driver Kernel**: [`mt7663-dkms`](https://github.com/elsangithub/mt7663-driver) (versi **1.0.11** atau lebih baru).
+1. **Driver Kernel**: [`mt7663-dkms`](https://github.com/elsangithub/mt7663-driver) (>= **1.0.11**) ATAU [`mt7668-dkms`](https://github.com/elsangithub/mt7668-driver) (>= **2.0.1**).
 2. **Sistem Operasi**: Armbian Linux (`6.18.59-ophub` / basis Debian 12/13).
 
 ---
@@ -133,12 +133,12 @@ Sebelum memasang paket Web UI ini, pastikan paket driver murni DKMS telah terpas
 Unduh paket rilis `.deb` terbaru dan pasang menggunakan `apt` agar seluruh dependensi pendukung (`hostapd`, `dnsmasq`, `python3`, `iptables`, `wireless-tools`) diunduh dan dipasang secara otomatis:
 
 ```bash
-# Unduh paket rilis terbaru (v1.0.5)
-wget https://github.com/elsangithub/mt7663-router-webui/releases/download/v1.0.5/mt7663-router-webui_1.0.5_all.deb
+# Unduh paket rilis terbaru (v1.0.6)
+wget https://github.com/elsangithub/mt7663-router-webui/releases/download/v1.0.6/mt7663-router-webui_1.0.6_all.deb
 
 # Pasang paket dan selesaikan dependensi otomatis
 sudo apt update
-sudo apt install ./mt7663-router-webui_1.0.5_all.deb
+sudo apt install ./mt7663-router-webui_1.0.6_all.deb
 ```
 
 ### 2. Aktifkan Mode Dual AP/STA

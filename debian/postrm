@@ -4,7 +4,7 @@ set -e
 case "$1" in
     remove|purge)
         # Clean up modprobe configuration
-        rm -f /etc/modprobe.d/wlan_mt7663_sdio.conf 2>/dev/null || true
+        rm -f /etc/modprobe.d/wlan_mt7663_sdio.conf /etc/modprobe.d/wlan_mt7668.conf 2>/dev/null || true
         rm -f /etc/sysctl.d/99-mt7663.conf 2>/dev/null || true
         rm -f /etc/update-motd.d/15-ap-info 2>/dev/null || true
         rm -f /etc/NetworkManager/dispatcher.d/90-wlan0-routing.sh 2>/dev/null || true
@@ -20,10 +20,16 @@ case "$1" in
         fi
 
         # Reload driver back to pure wlan0 client mode
-        if ip link show ap0 >/dev/null 2>&1 && lsmod | grep -q wlan_mt7663_sdio; then
-            echo "Restoring wlan_mt7663_sdio to pure wlan0 mode..."
-            modprobe -r wlan_mt7663_sdio 2>/dev/null || true
-            modprobe wlan_mt7663_sdio 2>/dev/null || true
+        if ip link show ap0 >/dev/null 2>&1; then
+            if lsmod | grep -q "^wlan_mt7663"; then
+                echo "Restoring wlan_mt7663_sdio to pure wlan0 mode..."
+                modprobe -r wlan_mt7663_sdio 2>/dev/null || true
+                modprobe wlan_mt7663_sdio 2>/dev/null || true
+            elif lsmod | grep -q "^wlan_mt7668"; then
+                echo "Restoring wlan_mt7668 to pure wlan0 mode..."
+                modprobe -r wlan_mt7668 2>/dev/null || true
+                modprobe wlan_mt7668 2>/dev/null || true
+            fi
         fi
 
         if [ -d /run/systemd/system ]; then

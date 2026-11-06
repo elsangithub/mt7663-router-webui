@@ -2,16 +2,16 @@
   <b>English</b> | <a href="README.id.md">Bahasa Indonesia</a>
 </p>
 
-# MT7663 Router Web UI & Turnkey SoftAP Hotspot
+# MT7663 / MT7668 Router Web UI & Turnkey SoftAP Hotspot
 
 [![Release](https://img.shields.io/github/v/release/elsangithub/mt7663-router-webui?color=blue&label=release)](https://github.com/elsangithub/mt7663-router-webui/releases)
 [![Build](https://img.shields.io/github/actions/workflow/status/elsangithub/mt7663-router-webui/release.yml?branch=main&label=build)](https://github.com/elsangithub/mt7663-router-webui/actions)
 [![Platform](https://img.shields.io/badge/Platform-FiberHome%20HG680--FJ%20(S905X2)-orange.svg)]()
 [![OS](https://img.shields.io/badge/OS-Armbian%20Linux%206.18%2B%20(Ophub)-blue.svg)]()
-[![Packages](https://img.shields.io/badge/Packages-Debian%2012%20(Bookworm)-red.svg)]()
+[![Packages](https://img.shields.io/badge/Packages-Debian%2012%2F13-red.svg)]()
 [![License: GPL-2.0](https://img.shields.io/badge/License-GPL_2.0-blue.svg)](LICENSE)
 
-A lightweight, zero-dependency WSGI management dashboard and turnkey SoftAP hotspot controller designed for the MediaTek **MT7663** SDIO Wi-Fi module on the **FiberHome HG680-FJ** (Amlogic S905X2 / Meson G12A) running Armbian Linux.
+A lightweight, zero-dependency WSGI management dashboard and turnkey SoftAP hotspot controller designed for MediaTek **MT7663** and **MT7668** SDIO Wi-Fi modules on the **FiberHome HG680-FJ** (Amlogic S905X2 / Meson G12A) running Armbian Linux.
 
 This package transforms your TV box into a standalone **Dual-Band Wireless Router & DBDC Repeater** with auto-switching upstream WAN support via **Ethernet (`eth0`)** or **Wi-Fi Client (`wlan0`)**, requiring no external USB Wi-Fi dongles.
 
@@ -119,9 +119,9 @@ The MT7663 chip supports **802.11ac Wave 2 VHT80** (80 MHz bandwidth). Understan
 
 ## 📋 Prerequisites
 
-Before installing this package, ensure you have installed the pure DKMS driver:
+Before installing this package, ensure you have installed the matching DKMS driver:
 
-1. **Kernel Driver**: [`mt7663-dkms`](https://github.com/elsangithub/mt7663-driver) (version **1.0.11** or higher).
+1. **Kernel Driver**: [`mt7663-dkms`](https://github.com/elsangithub/mt7663-driver) (>= **1.0.11**) OR [`mt7668-dkms`](https://github.com/elsangithub/mt7668-driver) (>= **2.0.1**).
 2. **Operating System**: Armbian Linux (`6.18.59-ophub` / Debian 12/13 base).
 
 ---
@@ -133,12 +133,12 @@ Before installing this package, ensure you have installed the pure DKMS driver:
 Download the latest `.deb` release package and install it using `apt` so that all required runtime dependencies (`hostapd`, `dnsmasq`, `python3`, `iptables`, `wireless-tools`) are automatically resolved:
 
 ```bash
-# Download latest release package (v1.0.5)
-wget https://github.com/elsangithub/mt7663-router-webui/releases/download/v1.0.5/mt7663-router-webui_1.0.5_all.deb
+# Download latest release package (v1.0.6)
+wget https://github.com/elsangithub/mt7663-router-webui/releases/download/v1.0.6/mt7663-router-webui_1.0.6_all.deb
 
 # Install and automatically resolve dependencies
 sudo apt update
-sudo apt install ./mt7663-router-webui_1.0.5_all.deb
+sudo apt install ./mt7663-router-webui_1.0.6_all.deb
 ```
 
 ### 2. Activate Dual AP/STA Mode
