@@ -10,12 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.6] - 2026-11-07
 
 ### Added
-- **Universal Dual-Band Companion for MediaTek MT7668**:
-  - Expanded package compatibility to support both MediaTek **MT7663** and **MT7668** SDIO chipsets seamlessly under a single turnkey package.
+- **Universal Dual-Band Companion for MediaTek MT7668 & MT7663**:
+  - Expanded package compatibility to support both MediaTek **MT7663** ([`mt7663-driver`](https://github.com/elsangithub/mt7663-driver)) and **MT7668** ([`mt7668-driver`](https://github.com/elsangithub/mt7668-driver)) SDIO chipsets seamlessly under a single turnkey package.
   - Relaxed Debian package dependencies to `Depends: mt7663-dkms | mt7668-dkms` to allow installation on boards powered by either driver.
   - Added dedicated modprobe configuration `wlan_mt7668.conf` setting `options wlan_mt7668 ap_mode=1` without colliding with `mt7668-dkms` package files.
   - Dynamic hardware-aware driver loading in `mt7663-hotspot`: automatically detects active kernel module or inspects physical SDIO card ID (`/sys/bus/sdio/devices/*/device`), completely ignoring absent hardware with zero CPU/log overhead.
-  - Added dynamic chipset detection in backend WSGI API (`/api/status`) and real-time navbar title adaptation in Web UI dashboard.
+  - Dynamic chipset detection with SDIO bus fallback in backend WSGI API (`/api/status`).
+  - Adaptive Web UI branding: dynamic browser tab title, navigation bar brand, and live chipset status row (`st-hotspot-chip`) on the dashboard hotspot card.
+  - Universal login portal branding ("MediaTek Router Login" / "Login Router MediaTek").
+  - Single Source of Truth (`sync-version.sh`) release automation script ensuring atomic version synchronization across Debian package control, build scripts, and documentation per Rule 2.
 
 ---
 

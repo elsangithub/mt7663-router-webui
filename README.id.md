@@ -17,11 +17,13 @@ Paket ini mengubah STB Anda menjadi **Router Wi-Fi Mandiri & Wireless Repeater D
 
 ---
 
-### 🧪 Lingkungan Pengujian Resmi
+### 🧪 Lingkungan Pengujian Resmi & Repositori Driver
 * **Perangkat Target**: FiberHome HG680-FJ (Amlogic S905X2 / Meson G12A)
-* **Modul Wi-Fi**: MediaTek MT7663 / MT7661 SDIO (`037A:7663`)
-* **Sistem Operasi**: Armbian v26.11.0 for Aml.S905x2 (Linux kernel `6.18.56-ophub`)
-* **Basis Paket**: Debian stable (Bookworm 12)
+* **Modul Wi-Fi & Repositori Driver yang Didukung**:
+  * **MediaTek MT7663 / MT7661 SDIO** (`037A:7663`): [`elsangithub/mt7663-driver`](https://github.com/elsangithub/mt7663-driver)
+  * **MediaTek MT7668 SDIO** (`037A:7668` / `0x7608` / `0x6602`): [`elsangithub/mt7668-driver`](https://github.com/elsangithub/mt7668-driver)
+* **Sistem Operasi**: Armbian Linux (`6.18.56-ophub` / `6.18.59-ophub`)
+* **Basis Paket**: Debian stable (Bookworm 12 / Trixie 13)
 
 ---
 
@@ -102,12 +104,12 @@ Paket ini mengubah STB Anda menjadi **Router Wi-Fi Mandiri & Wireless Repeater D
 
 ## ⚡ Lebar Pita 80 MHz (VHT80): Kemampuan & Konsekuensi / Risikonya
 
-Chipset MT7663 mendukung protokol **802.11ac Wave 2 VHT80** (lebar pita 80 MHz). Memahami keunggulan dan karakteristiknya sangat penting untuk mendapatkan performa terbaik:
+Chipset MediaTek MT7663 dan MT7668 mendukung protokol **802.11ac Wave 2 VHT80** (lebar pita 80 MHz). Memahami keunggulan dan karakteristiknya sangat penting untuk mendapatkan performa terbaik:
 
 ### 🚀 Kemampuan & Keunggulan:
 * **Kecepatan Link 866 Mbps**: Pada lebar pita 80 MHz dengan 2x2 MU-MIMO di 5 GHz, perangkat klien yang kompatibel dapat mencapai kecepatan tautan (*link rate*) hingga 866.7 Mbps.
 * **Throughput Nyata Super Cepat**: Mencapai kecepatan throughput riil **350–500 Mbps** pada pengujian iperf3 maupun internet. Sangat ideal untuk streaming 4K tanpa buffering, transfer file lokal LAN yang masif, dan gaming rendah latensi.
-* **Sangat Maksimal dengan Sumber `eth0`**: Jika internet masuk melalui kabel LAN (`eth0`), modul radio MT7663 dapat mendedikasikan 100% daya pancar radionya pada `ap0` di 80 MHz tanpa terganggu aktivitas penerimaan nirkabel lain.
+* **Sangat Maksimal dengan Sumber `eth0`**: Jika internet masuk melalui kabel LAN (`eth0`), modul radio MediaTek (MT7663 / MT7668) dapat mendedikasikan 100% daya pancar radionya pada `ap0` di 80 MHz tanpa terganggu aktivitas penerimaan nirkabel lain.
 
 ### ⚠️ Risiko & Konsekuensi Lingkungan:
 * **Daya Tembus Dinding Lebih Rendah**: Frekuensi tinggi 5 GHz 80 MHz secara alami mengalami pelemahan (*attenuation*) sinyal yang lebih besar saat menembus dinding semen dan cor beton dibanding 2.4 GHz.
@@ -121,7 +123,9 @@ Chipset MT7663 mendukung protokol **802.11ac Wave 2 VHT80** (lebar pita 80 MHz).
 
 Sebelum memasang paket Web UI ini, pastikan paket driver DKMS yang sesuai telah terpasang:
 
-1. **Driver Kernel**: [`mt7663-dkms`](https://github.com/elsangithub/mt7663-driver) (>= **1.0.11**) ATAU [`mt7668-dkms`](https://github.com/elsangithub/mt7668-driver) (>= **2.0.1**).
+1. **Driver Kernel**:
+   * Modul MT7663: [`mt7663-dkms`](https://github.com/elsangithub/mt7663-driver) (>= **1.0.11**)
+   * Modul MT7668: [`mt7668-dkms`](https://github.com/elsangithub/mt7668-driver) (>= **2.0.1**)
 2. **Sistem Operasi**: Armbian Linux (`6.18.59-ophub` / basis Debian 12/13).
 
 ---
@@ -160,7 +164,7 @@ ip link show ap0
 ## 🖥️ Cara Mengakses Web Dashboard
 
 1. Hubungkan HP atau laptop Anda ke hotspot Wi-Fi bawaan STB:
-   * **Nama SSID**: `MT7663-Hotspot` (atau `HG680_5G_VHT80`)
+   * **Nama SSID**: `HG680_5G_VHT80` (atau SSID kustom yang Anda setel)
    * **Kata Sandi**: `password123`
 2. Buka browser dan kunjungi alamat:
    * **URL**: [`http://10.10.10.1:8080`](http://10.10.10.1:8080)

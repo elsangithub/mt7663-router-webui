@@ -17,11 +17,13 @@ This package transforms your TV box into a standalone **Dual-Band Wireless Route
 
 ---
 
-### 🧪 Verified Test Environment
+### 🧪 Verified Test Environment & Driver Repositories
 * **Target Hardware**: FiberHome HG680-FJ (Amlogic S905X2 / Meson G12A)
-* **Wi-Fi Module**: MediaTek MT7663 / MT7661 SDIO (`037A:7663`)
-* **Operating System**: Armbian v26.11.0 for Aml.S905x2 (Linux kernel `6.18.56-ophub`)
-* **Userspace / Packages**: Debian stable (Bookworm 12)
+* **Supported Wi-Fi Modules & Companion Driver Repositories**:
+  * **MediaTek MT7663 / MT7661 SDIO** (`037A:7663`): [`elsangithub/mt7663-driver`](https://github.com/elsangithub/mt7663-driver)
+  * **MediaTek MT7668 SDIO** (`037A:7668` / `0x7608` / `0x6602`): [`elsangithub/mt7668-driver`](https://github.com/elsangithub/mt7668-driver)
+* **Operating System**: Armbian Linux (`6.18.56-ophub` / `6.18.59-ophub`)
+* **Userspace / Packages**: Debian stable (Bookworm 12 / Trixie 13)
 
 ---
 
@@ -102,12 +104,12 @@ This package transforms your TV box into a standalone **Dual-Band Wireless Route
 
 ## ⚡ 80 MHz Channel Width (VHT80): Capabilities & Trade-Offs
 
-The MT7663 chip supports **802.11ac Wave 2 VHT80** (80 MHz bandwidth). Understanding its capabilities and environmental trade-offs helps you achieve the best performance:
+The MediaTek MT7663 and MT7668 chipsets support **802.11ac Wave 2 VHT80** (80 MHz bandwidth). Understanding their capabilities and environmental trade-offs helps you achieve the best performance:
 
 ### 🚀 Capabilities:
 * **866 Mbps Physical Link Rate**: When operating at 80 MHz with 2x2 MU-MIMO on 5 GHz, compatible client devices achieve theoretical link speeds of up to 866.7 Mbps.
 * **Real-World High Throughput**: Achieves **350–500 Mbps** actual throughput in iperf3/speed tests. Ideal for 4K video streaming, high-speed local NAS transfers, and low-latency gaming.
-* **Peak Performance with `eth0` WAN**: Using `eth0` as the wired WAN input allows the MT7663 radio to dedicate 100% of its RF airtime to client devices on `ap0` at full 80 MHz speeds.
+* **Peak Performance with `eth0` WAN**: Using `eth0` as the wired WAN input allows the MediaTek radio (MT7663 / MT7668) to dedicate 100% of its RF airtime to client devices on `ap0` at full 80 MHz speeds.
 
 ### ⚠️ Environmental Risks & Caveats:
 * **Reduced Wall Penetration**: High-frequency 5 GHz signals naturally experience higher attenuation through solid walls and concrete compared to 2.4 GHz.
@@ -121,7 +123,9 @@ The MT7663 chip supports **802.11ac Wave 2 VHT80** (80 MHz bandwidth). Understan
 
 Before installing this package, ensure you have installed the matching DKMS driver:
 
-1. **Kernel Driver**: [`mt7663-dkms`](https://github.com/elsangithub/mt7663-driver) (>= **1.0.11**) OR [`mt7668-dkms`](https://github.com/elsangithub/mt7668-driver) (>= **2.0.1**).
+1. **Kernel Driver**:
+   * For MT7663: [`mt7663-dkms`](https://github.com/elsangithub/mt7663-driver) (>= **1.0.11**)
+   * For MT7668: [`mt7668-dkms`](https://github.com/elsangithub/mt7668-driver) (>= **2.0.1**)
 2. **Operating System**: Armbian Linux (`6.18.59-ophub` / Debian 12/13 base).
 
 ---
@@ -160,7 +164,7 @@ ip link show ap0
 ## 🖥️ Accessing the Web Dashboard
 
 1. Connect your phone or laptop to the default Wi-Fi hotspot:
-   * **SSID**: `MT7663-Hotspot` (or `HG680_5G_VHT80`)
+   * **SSID**: `HG680_5G_VHT80` (or custom configured SSID)
    * **Password**: `password123`
 2. Open your web browser and navigate to:
    * **URL**: [`http://10.10.10.1:8080`](http://10.10.10.1:8080)
