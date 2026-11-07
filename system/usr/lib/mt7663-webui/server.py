@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-MediaTek MT7663 Router Web UI Manager
+MediaTek MT7663 / MT7668 Router Web UI Manager
 FiberHome HG680-FJ (Amlogic S905X2 / Meson G12A)
 Lightweight HTTP API & Web Dashboard using Bottle.py
+
+Copyright (C) 2026 Van der Decken <elsangithub@users.noreply.github.com>
+Licensed under the GNU General Public License v2.0 (GPL-2.0).
 """
 
 import os

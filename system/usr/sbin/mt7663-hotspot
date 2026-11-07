@@ -1,6 +1,9 @@
 #!/bin/bash
-# MediaTek MT7663 SoftAP / Hotspot Management Utility
+# MediaTek MT7663 / MT7668 SoftAP Hotspot Daemon Manager
 # FiberHome HG680-FJ (Amlogic Meson G12A)
+#
+# Copyright (C) 2026 Van der Decken <elsangithub@users.noreply.github.com>
+# Licensed under the GNU General Public License v2.0 (GPL-2.0).
 
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
 
